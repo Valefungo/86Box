@@ -1899,12 +1899,17 @@ pc_run(void)
 }
 
 /* Handler for the 1-second timer to refresh the window title. */
+extern int videoframecount;
 void
 pc_onesec(void)
 {
     fps        = framecount;
-    framecount = 0;
 
+    printf("pc_onesec: fps:%d   fcx:%d   frames:%d   vfc:%d  -  mon:%d %d\n", fps, framecountx, frames, videoframecount,
+           monitors[0].mon_actualrenderedframes, monitors[0].mon_renderedframes);
+
+    framecount = 0;
+    videoframecount = 0;
     title_update = 1;
 }
 

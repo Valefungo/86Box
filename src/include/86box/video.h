@@ -223,7 +223,6 @@ extern int          video_grayscale;
 extern int          video_graytype;
 
 extern double cpuclock;
-extern int    emu_fps;
 extern int    frames;
 extern int    readflash;
 extern int    ibm8514_active;

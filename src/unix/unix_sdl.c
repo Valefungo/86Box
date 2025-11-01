@@ -23,12 +23,6 @@
 #define RENDERER_HARDWARE    2
 #define RENDERER_OPENGL      4
 
-typedef struct sdl_blit_params {
-    int x;
-    int y;
-    int w;
-    int h;
-} sdl_blit_params;
 extern sdl_blit_params params;
 extern int             blitreq;
 

@@ -1580,6 +1580,12 @@ main(int argc, char **argv)
             gettimeofday(&loopstop, NULL);
 
             loopelapsed = (loopstop.tv_sec - loopstart.tv_sec) + ((loopstop.tv_usec - loopstart.tv_usec) / 1000000.0);
+
+            if (videoframecount % 200 == 0)
+            {
+                videoframecount = 0;
+                gettimeofday(&loopstart, NULL);
+            }
         }
 
         if (title_set) {

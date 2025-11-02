@@ -211,7 +211,7 @@ void draw_perfmon(SDL_Renderer *renderer)
     draw_text(renderer, temp, x0, y0 + 8, fore);
 
     // real fps
-    double rfps = videoelapsed * 1000;
+    double rfps = ((force_10ms ? 1 : 10) - (videoelapsed * 1000));
     double lfps = videoframecount / loopelapsed;
 
     snprintf(temp, 128, "VFS: %0.2f / %0.2f vs %d Hz", rfps, lfps, monitors[0].mon_actualrenderedframes);

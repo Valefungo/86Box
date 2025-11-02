@@ -185,6 +185,7 @@ sdl_real_blit(SDL_Rect *r_src)
         fprintf(stderr, "SDL: unable to copy texture to renderer (%s)\n", SDL_GetError());
 
     // give the osd an opportunity to draw itself
+    osd_perfmon_present();
     osd_present();
 
     SDL_RenderPresent(sdl_render);

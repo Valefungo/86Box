@@ -78,6 +78,8 @@ static int      fullscreen_pending = 0;
 // Two keys to be pressed together to open the OSD, variables to make them configurable in future
 static uint16_t osd_open_first_key = SDL_SCANCODE_RCTRL;
 static uint16_t osd_open_second_key = SDL_SCANCODE_F11;
+static uint16_t osd_perfmon_toggle_first_key = SDL_SCANCODE_RCTRL;
+static uint16_t osd_perfmon_toggle_second_key = SDL_SCANCODE_F12;
 
 static const uint16_t sdl_to_xt[0x200] = {
     [SDL_SCANCODE_ESCAPE]       = 0x01,
@@ -188,7 +190,14 @@ static const uint16_t sdl_to_xt[0x200] = {
 };
 
 sdl_blit_params params  = { 0, 0, 0, 0 };
-int videoframecount = 0;
+
+struct timeval loopstop, loopstart;
+struct timeval videostop, videostart;
+long videoframecount = 0;
+long cpuframecount = 0;
+double videoelapsed = 0;
+double loopelapsed = 0;
+double systemelapsed = 0;
 int blitreq = 0;
 
 void *
@@ -575,9 +584,11 @@ main_thread(UNUSED(void *param))
 
     SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
     framecountx = 0;
+
     // title_update = 1;
     old_time = SDL_GetTicks();
     drawits = frames = 0;
+
     while (!is_quit && cpu_thread_run)
     {
         /* See if it is time to run a frame of code. */
@@ -593,7 +604,8 @@ main_thread(UNUSED(void *param))
 #endif
 
         old_time = new_time;
-        if (drawits > 0 && !dopause) {
+        if (drawits > 0 && !dopause)
+        {
             /* Yes, so do one frame now. */
             drawits -= force_10ms ? 10 : 1;
             if (drawits > 50)
@@ -609,12 +621,15 @@ main_thread(UNUSED(void *param))
                 frames     = 0;
             }
         }
-        else /* Just so we dont overload the host OS. */
+        else
+        {
+            /* Just so we dont overload the host OS. */
             SDL_Delay(1);
+        }
 
         /* If needed, handle a screen resize. */
-        if (atomic_load(&doresize_monitors[0]) && !video_fullscreen && !is_quit) {
-
+        if (atomic_load(&doresize_monitors[0]) && !video_fullscreen && !is_quit)
+        {
             if (vid_resize & 2)
                 plat_resize(fixed_size_x, fixed_size_y, 0);
             else
@@ -1252,9 +1267,11 @@ main(int argc, char **argv)
     int      ret = 0;
 
     SDL_Init(0);
+
     ret = pc_init(argc, argv);
     if (ret == 0)
         return 0;
+
     if (!pc_init_roms()) {
         ui_msgbox_header(MBX_FATAL, L"No ROMs found.", L"86Box could not find any usable ROM images.\n\nPlease download a ROM set and extract it into the \"roms\" directory.");
         SDL_Quit();
@@ -1264,12 +1281,21 @@ main(int argc, char **argv)
 
     for (uint8_t i = 1; i < GFXCARD_MAX; i++)
         gfxcard[i]  = 0;
+
     eventthread = SDL_ThreadID();
-    blitmtx     = SDL_CreateMutex();
+
+    blitmtx    = SDL_CreateMutex();
     if (!blitmtx) {
         fprintf(stderr, "Failed to create blit mutex: %s", SDL_GetError());
         return -1;
     }
+
+    mousemutex = SDL_CreateMutex();
+    if (!mousemutex) {
+        fprintf(stderr, "Failed to create mouse mutex: %s", SDL_GetError());
+        return -1;
+    }
+
     libedithandle = dlopen(LIBEDIT_LIBRARY, RTLD_LOCAL | RTLD_LAZY);
     if (libedithandle) {
         f_readline    = dlsym(libedithandle, "readline");
@@ -1280,13 +1306,19 @@ main(int argc, char **argv)
         f_rl_callback_handler_remove = dlsym(libedithandle, "rl_callback_handler_remove");
     } else
         fprintf(stderr, "libedit not found, line editing will be limited.\n");
-    mousemutex = SDL_CreateMutex();
+
     sdl_initho();
 
     if (start_in_fullscreen) {
         video_fullscreen = 1;
         sdl_set_fs(1);
     }
+
+    // reset counter and mark start time
+    videoframecount = 0;
+    cpuframecount = 0;
+    gettimeofday(&loopstart, NULL);
+
     /* Fire up the machine. */
     pc_reset_hard_init();
 
@@ -1476,19 +1508,37 @@ main(int argc, char **argv)
                                 else
                                     osd_first_key_pressed = 0;
                             }
-                            else if (osd_first_key_pressed && event.type == SDL_KEYDOWN && event.key.keysym.scancode == osd_open_second_key)
+                            else if (osd_first_key_pressed && event.type == SDL_KEYDOWN)
                             {
-                                // open OSD!
-                                flag_osd_open = osd_open(event);
+                                if (event.key.keysym.scancode == osd_open_second_key)
+                                {
+                                    // open OSD!
+                                    flag_osd_open = osd_open(event);
 
-                                // we can assume alt-gr has been released, tell this also to the virtual machine
-                                osd_first_key_pressed = 0;
-                                keyboard_input(0, sdl_to_xt[osd_open_first_key]);
-                                break;
+                                    // we can assume alt-gr has been released, tell this also to the virtual machine
+                                    osd_first_key_pressed = 0;
+                                    keyboard_input(0, sdl_to_xt[osd_open_first_key]);
+                                    break;
+                                }
+                                else if (event.key.keysym.scancode == osd_perfmon_toggle_second_key)
+                                {
+                                    // toggle the performance monitor open or closed
+                                    osd_perfmon_toggle(event);
+
+                                    // we can assume alt-gr has been released, tell this also to the virtual machine
+                                    osd_first_key_pressed = 0;
+                                    keyboard_input(0, sdl_to_xt[osd_open_first_key]);
+                                    break;
+                                }
+                                else
+                                {
+                                    // invalidate osd_first_key_pressed, the second key wasn't one of ours
+                                    osd_first_key_pressed = 0;
+                                }
                             }
                             else
                             {
-                                // invalidate osd_first_key_pressed is something happens between its keydown and keydown for G
+                                // invalidate osd_first_key_pressed if something happens between its keydown and keydown for the second one
                                 osd_first_key_pressed = 0;
                             }
 
@@ -1524,7 +1574,12 @@ main(int argc, char **argv)
 
         if (blitreq) {
             videoframecount++;
+
             sdl_blit(params.x, params.y, params.w, params.h);
+
+            gettimeofday(&loopstop, NULL);
+
+            loopelapsed = (loopstop.tv_sec - loopstart.tv_sec) + ((loopstop.tv_usec - loopstart.tv_usec) / 1000000.0);
         }
 
         if (title_set) {
@@ -1544,6 +1599,7 @@ main(int argc, char **argv)
             break;
         }
     }
+
     printf("\n");
     SDL_DestroyMutex(blitmtx);
     SDL_DestroyMutex(mousemutex);
@@ -1630,11 +1686,14 @@ void
 startblit(void)
 {
     SDL_LockMutex(blitmtx);
+    gettimeofday(&videostart, NULL);
 }
 
 void
 endblit(void)
 {
+    gettimeofday(&videostop, NULL);
+    videoelapsed = (videostop.tv_sec - videostart.tv_sec) + ((videostop.tv_usec - videostart.tv_usec) / 1000000.0);
     SDL_UnlockMutex(blitmtx);
 }
 

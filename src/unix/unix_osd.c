@@ -1,12 +1,20 @@
 #include <SDL.h>
 #include <SDL_messagebox.h>
 
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
-#include <dirent.h>
 #include <string.h>
+#include <time.h>
+#include <wchar.h>
+#include <stdatomic.h>
+#include <unistd.h>
+#include <math.h>
+
+#include <dirent.h>
 #include <sys/param.h>
 
 /* This #undef is needed because a SDL include header redefines HAVE_STDARG_H. */
@@ -22,6 +30,9 @@
 #include <86box/unix_sdl.h>
 #include <86box/unix_osd.h>
 #include <86box/unix_osd_font.h>
+#include <86box/config.h>
+#include <86box/mem.h>
+#include "cpu.h"
 
 static int SCREEN_W = 640;
 static int SCREEN_H = 480;
@@ -86,6 +97,7 @@ static int file_selected = 0;
 static int scroll_offset = 0;
 
 static int osd_is_open = 0;
+static int osd_perfmon_is_open = 0;
 static AppState state = STATE_MENU;
 
 static char files[100][1024];
@@ -104,9 +116,9 @@ void reset_iso_files(void)
 
 static int endswith(char *s1, char *mask)
 {
-    int ss = strlen(s1);
-    int sm = strlen(mask);
-    return ss >= sm && strncasecmp(s1+ss-sm, mask, sm) == 0;
+    int s1len = strlen(s1);
+    int masklen = strlen(mask);
+    return s1len >= masklen && strncasecmp(s1+s1len-masklen, mask, masklen) == 0;
 }
 
 int load_iso_files(char *basedir, char files[][1024], int max_files, char *mask)
@@ -168,6 +180,46 @@ void draw_box_with_border(SDL_Renderer *renderer, SDL_Rect box)
     SDL_RenderFillRect(renderer, &inner);
 }
 
+extern  int fps;
+extern  int framecountx;
+extern  int frames;
+extern  int videoframecount;
+extern  long videoframetimer; // usecs
+extern  long loopframetimer; // usecs
+extern  double videoelapsed;
+extern  double loopelapsed;
+
+#define PERFMON_ALPHA 128
+void draw_perfmon(SDL_Renderer *renderer)
+{
+    int x0 = 5;
+    int y0 = 5;
+    SDL_Color fore = {255,255,255,PERFMON_ALPHA};
+    SDL_Color back = {0,0,255,PERFMON_ALPHA};
+    char temp[128] = "";
+
+//     printf("pc_onesec: fps:%d   fcx:%d   frames:%d   vfc:%d  -  mon:%d %d\n", fps, framecountx, frames, videoframecount,
+//            monitors[0].mon_actualrenderedframes, monitors[0].mon_renderedframes);
+
+    SDL_Rect inner = {0, 0, 320, 48};
+    SDL_SetRenderDrawColor(renderer, 0, 0, 128, PERFMON_ALPHA);
+    SDL_RenderFillRect(renderer, &inner);
+
+    draw_text(renderer, "OSD PERFMON", x0, y0, fore);
+
+    snprintf(temp, 128, "FPS: %d.%d", fps / (force_10ms ? 1 : 10), force_10ms ? 0 : (fps % 10));
+    draw_text(renderer, temp, x0, y0 + 8, fore);
+
+    // real fps
+    double rfps = videoelapsed * 1000;
+    double lfps = videoframecount / loopelapsed;
+
+    snprintf(temp, 128, "VFS: %0.2f / %0.2f vs %d Hz", rfps, lfps, monitors[0].mon_actualrenderedframes);
+    draw_text(renderer, temp, x0, y0 + 16, fore);
+
+    snprintf(temp, 128, "CPU: %s, %d - %d", cpu_s->name, cpu_s->rspeed, cpu_s->rspeed / (force_10ms ? 100 : 1000));
+    draw_text(renderer, temp, x0, y0 + 24, fore);
+}
 
 void draw_menu(SDL_Renderer *renderer, int selected)
 {
@@ -288,6 +340,17 @@ void osd_deinit(void)
     font_texture = NULL;
 }
 
+int osd_perfmon_toggle(SDL_Event event)
+{
+    // switch it on or off
+    if (osd_perfmon_is_open)
+        osd_perfmon_is_open = 0;
+    else
+        osd_perfmon_is_open = 1;
+
+    return 1;
+}
+
 int osd_open(SDL_Event event)
 {
     // ok opened
@@ -320,6 +383,25 @@ static void osd_cmd_run(char *c)
     strcpy(l, c);
     unix_executeLine(l);
     free(l);
+}
+
+void osd_perfmon_present(void)
+{
+    // double shortcut, don't render if the main osd is open
+    if (osd_is_open || !osd_perfmon_is_open)
+        return;
+
+    // performance monitor renders in a corner
+
+#ifndef OSD_INSIDE_MAIN_LOOP
+    SDL_LockMutex(sdl_mutex);
+#endif
+
+    draw_perfmon(sdl_render);
+
+#ifndef OSD_INSIDE_MAIN_LOOP
+    SDL_UnlockMutex(sdl_mutex);
+#endif
 }
 
 void osd_present(void)

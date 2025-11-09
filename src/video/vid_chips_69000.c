@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <time.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <86box/86box.h>
 #include <86box/io.h>
 #include <86box/mem.h>

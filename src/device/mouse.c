@@ -19,7 +19,7 @@
  */
 #include <math.h>
 #include <stdarg.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -208,7 +208,7 @@ mouse_scale_coord_y(double y, int mul)
 void
 mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
 {
-    double real_x = atomic_load(&mouse_x);
+    double real_x = atomic_load_double(&mouse_x);
     double smax_x;
     double rsmin_x;
     double smin_x;
@@ -266,7 +266,7 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
     if (abs)
         real_x -= rsmin_x;
 
-    atomic_store(&mouse_x, real_x);
+    atomic_store_double(&mouse_x, real_x);
 }
 
 /* It appears all host platforms give us y in the Microsoft format
@@ -275,7 +275,7 @@ mouse_subtract_x(int *delta_x, int *o_x, int min, int max, int abs)
 void
 mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
 {
-    double real_y = atomic_load(&mouse_y);
+    double real_y = atomic_load_double(&mouse_y);
     double smax_y;
     double rsmin_y;
     double smin_y;
@@ -339,7 +339,7 @@ mouse_subtract_y(int *delta_y, int *o_y, int min, int max, int invert, int abs)
     if (invert)
         real_y = -real_y;
 
-    atomic_store(&mouse_y, real_y);
+    atomic_store_double(&mouse_y, real_y);
 }
 
 /* It appears all host platforms give us y in the Microsoft format
@@ -356,7 +356,7 @@ mouse_subtract_coords(int *delta_x, int *delta_y, int *o_x, int *o_y,
 int
 mouse_wheel_moved(void)
 {
-    int ret = !!(atomic_load(&mouse_z));
+    int ret = !!(atomic_load_int(&mouse_z));
 
     return ret;
 }
@@ -364,7 +364,7 @@ mouse_wheel_moved(void)
 int
 mouse_hwheel_moved(void)
 {
-    int ret = !!(atomic_load(&mouse_w));
+    int ret = !!(atomic_load_int(&mouse_w));
 
     return ret;
 }
@@ -372,8 +372,8 @@ mouse_hwheel_moved(void)
 int
 mouse_moved(void)
 {
-    int moved_x = !!((int) floor(ABSD(mouse_scale_coord_x(atomic_load(&mouse_x), 1))));
-    int moved_y = !!((int) floor(ABSD(mouse_scale_coord_y(atomic_load(&mouse_y), 1))));
+    int moved_x = !!((int) floor(ABSD(mouse_scale_coord_x(atomic_load_double(&mouse_x), 1))));
+    int moved_y = !!((int) floor(ABSD(mouse_scale_coord_y(atomic_load_double(&mouse_y), 1))));
 
     /* Convert them to integer so we treat < 1.0 and > -1.0 as 0. */
     int ret = (moved_x || moved_y);
@@ -390,11 +390,11 @@ mouse_state_changed(void)
     int hwheel    = (mouse_nbut >= 6);
     int ret;
 
-    b = atomic_load(&mouse_buttons);
+    b = atomic_load_int(&mouse_buttons);
     mouse_delta_b = (b ^ mouse_old_b);
     mouse_old_b   = b;
 
-    ret = mouse_moved() || ((atomic_load(&mouse_z) != 0) && wheel) || ((atomic_load(&mouse_w) != 0) && hwheel) || (mouse_delta_b & b_mask);
+    ret = mouse_moved() || ((atomic_load_int(&mouse_z) != 0) && wheel) || ((atomic_load_int(&mouse_w) != 0) && hwheel) || (mouse_delta_b & b_mask);
 
     return ret;
 }
@@ -428,7 +428,7 @@ atomic_double_add(_Atomic double *var, double val)
 
     temp += val;
 
-    atomic_store(var, temp);
+    atomic_store_double(var, temp);
 }
 
 void
@@ -481,31 +481,31 @@ mouse_scale_axis(int axis, int val)
 void
 mouse_set_z(int z)
 {
-    atomic_fetch_add(&mouse_z, z);
+    atomic_fetch_add_int(&mouse_z, z);
 }
 
 void
 mouse_clear_z(void)
 {
-    atomic_store(&mouse_z, 0);
+    atomic_store_int(&mouse_z, 0);
 }
 
 void
 mouse_set_w(int w)
 {
-    atomic_fetch_add(&mouse_w, w);
+    atomic_fetch_add_int(&mouse_w, w);
 }
 
 void
 mouse_clear_w(void)
 {
-    atomic_store(&mouse_w, 0);
+    atomic_store_int(&mouse_w, 0);
 }
 
 void
 mouse_subtract_z(int *delta_z, int min, int max, int invert)
 {
-    int z = atomic_load(&mouse_z);
+    int z = atomic_load_int(&mouse_z);
     int real_z = invert ? -z : z;
 
     if (real_z > max) {
@@ -519,13 +519,13 @@ mouse_subtract_z(int *delta_z, int min, int max, int invert)
         real_z = 0;
     }
 
-    atomic_store(&mouse_z, invert ? -real_z : real_z);
+    atomic_store_int(&mouse_z, invert ? -real_z : real_z);
 }
 
 void
 mouse_subtract_w(int *delta_w, int min, int max, int invert)
 {
-    int w = atomic_load(&mouse_w);
+    int w = atomic_load_int(&mouse_w);
     int real_w = invert ? -w : w;
 
     if (real_w > max) {
@@ -539,19 +539,19 @@ mouse_subtract_w(int *delta_w, int min, int max, int invert)
         real_w = 0;
     }
 
-    atomic_store(&mouse_w, invert ? -real_w : real_w);
+    atomic_store_int(&mouse_w, invert ? -real_w : real_w);
 }
 
 void
 mouse_set_buttons_ex(int b)
 {
-    atomic_store(&mouse_buttons, b);
+    atomic_store_int(&mouse_buttons, b);
 }
 
 int
 mouse_get_buttons_ex(void)
 {
-    return atomic_load(&mouse_buttons);
+    return atomic_load_int(&mouse_buttons);
 }
 
 void

@@ -24,7 +24,7 @@
 using atomic_bool = std::atomic_bool;
 using atomic_int  = std::atomic_int;
 #else
-#    include <stdatomic.h>
+#    include "86box_atomics.h"
 #endif
 
 #define makecol(r, g, b)   ((b) | ((g) << 8) | ((r) << 16) | 0xff000000)

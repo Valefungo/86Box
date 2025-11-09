@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -574,9 +574,9 @@ opl4_midi_thread(UNUSED(void *arg))
         thread_reset_event(opl4_midi->wait_event);
         if (!opl4_midi->on)
             break;
-        atomic_store(&opl4_midi->gen_in_progress, true);
+        atomic_store_int(&opl4_midi->gen_in_progress, true);
         opl4_midi->opl4.generate(opl4_midi->opl4.priv, buffer, RENDER_RATE);
-        atomic_store(&opl4_midi->gen_in_progress, false);
+        atomic_store_int(&opl4_midi->gen_in_progress, false);
         if (sound_is_float) {
             for (i = 0; i < (buf_size / 2); i++) {
                 opl4_midi->buffer_float[(i + buf_pos) * 2]       = buffer[i * 2] / 32768.0;
@@ -678,7 +678,7 @@ opl4_init(UNUSED(const device_t *info))
 
     opl4_midi_cur->on                                = true;
     opl4_midi_cur->midi_channel_data[9].drum_channel = true;
-    atomic_init(&opl4_midi_cur->gen_in_progress, 0);
+    atomic_init_bool(&opl4_midi_cur->gen_in_progress, 0);
 
     for (uint8_t voice = 0; voice < NR_OF_WAVE_CHANNELS; voice++) {
         opl4_midi_cur->voice_data[voice].number          = voice;

@@ -45,7 +45,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdarg.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>

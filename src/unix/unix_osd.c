@@ -10,7 +10,7 @@
 #include <string.h>
 #include <time.h>
 #include <wchar.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <unistd.h>
 #include <math.h>
 
@@ -43,9 +43,6 @@ static int BOX_H = 160;
 #define CHAR_W 8
 #define CHAR_H 8
 
-// this makes the osd embeddable in the 86box main sdl loop
-#define OSD_INSIDE_MAIN_LOOP
-
 // interface to SDL environment
 extern SDL_Window         *sdl_win;
 extern SDL_Renderer       *sdl_render;
@@ -57,6 +54,12 @@ extern void unix_executeLine(char *line);
 // interface to the currently set window title, this can't be seen normally in a fullscreen setup
 extern wchar_t sdl_win_title[512];
 char sdl_win_title_mb[512] = "";
+
+// toast messages
+#define TOAST_TIMEDELAY 5
+char sdl_toast_text[512] = "";
+time_t toasttime = 0;
+unsigned char showtoast = 0;
 
 static SDL_Texture *font_texture = NULL;
 
@@ -105,7 +108,17 @@ static int file_count = 0;
 
 static int max_visible = 0;
 
-void reset_iso_files(void)
+
+static void osd_measure_screen(void)
+{
+    SDL_GetWindowSize(sdl_win, &SCREEN_W, &SCREEN_H);
+    BOX_W = (SCREEN_W / 4) * 3;
+    BOX_H = (SCREEN_H / 4) * 3;
+
+    max_visible = (BOX_H - TITLE_HEIGHT) / LINE_HEIGHT;
+}
+
+static void reset_iso_files(void)
 {
     file_selected = 0;
     scroll_offset = 0;
@@ -121,7 +134,7 @@ static int endswith(char *s1, char *mask)
     return s1len >= masklen && strncasecmp(s1+s1len-masklen, mask, masklen) == 0;
 }
 
-int load_iso_files(char *basedir, char files[][1024], int max_files, char *mask)
+static int load_iso_files(char *basedir, char files[][1024], int max_files, char *mask)
 {
     DIR *d;
     struct dirent *dir;
@@ -147,7 +160,7 @@ int load_iso_files(char *basedir, char files[][1024], int max_files, char *mask)
     return count;
 }
 
-void draw_text(SDL_Renderer *renderer, const char *text, int x, int y, SDL_Color color)
+static void draw_text(SDL_Renderer *renderer, const char *text, int x, int y, SDL_Color color)
 {
     if (!font_texture)
         return;
@@ -155,19 +168,28 @@ void draw_text(SDL_Renderer *renderer, const char *text, int x, int y, SDL_Color
     SDL_SetTextureColorMod(font_texture, color.r, color.g, color.b);
 
     int i = 0;
+    int n = 0;
     while (text[i])
     {
         unsigned char c = text[i];
         int tx = (c % font_cols) * CHAR_W;
         int ty = (c / font_cols) * CHAR_H;
         SDL_Rect src = {tx, ty, CHAR_W, CHAR_H};
-        SDL_Rect dst = {x + i * CHAR_W, y, CHAR_W, CHAR_H};
-        SDL_RenderCopy(renderer, font_texture, &src, &dst);
+        if (c == 10 || c == 13)
+        {
+            n = i;
+            y += CHAR_H + 1;
+        }
+        else
+        {
+            SDL_Rect dst = {x + ((i-n) * CHAR_W), y, CHAR_W, CHAR_H};
+            SDL_RenderCopy(renderer, font_texture, &src, &dst);
+        }
         i++;
     }
 }
 
-void draw_box_with_border(SDL_Renderer *renderer, SDL_Rect box)
+static void draw_box_with_border(SDL_Renderer *renderer, SDL_Rect box)
 {
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderDrawRect(renderer, &box);
@@ -189,8 +211,23 @@ extern  long loopframetimer; // usecs
 extern  double videoelapsed;
 extern  double loopelapsed;
 
+#define TOAST_ALPHA 128
+static void draw_toast(SDL_Renderer *renderer)
+{
+    int x0 = 5;
+    int y0 = SCREEN_H-32+2;
+    SDL_Color fore = {255,255,255,TOAST_ALPHA};
+    SDL_Color back = {0,0,255,TOAST_ALPHA};
+
+    SDL_Rect inner = {0, SCREEN_H-32, 320, 32};
+    SDL_SetRenderDrawColor(renderer, 0, 0, 128, TOAST_ALPHA);
+    SDL_RenderFillRect(renderer, &inner);
+
+    draw_text(renderer, sdl_toast_text, x0, y0, fore);
+}
+
 #define PERFMON_ALPHA 128
-void draw_perfmon(SDL_Renderer *renderer)
+static void draw_perfmon(SDL_Renderer *renderer)
 {
     int x0 = 5;
     int y0 = 5;
@@ -211,7 +248,7 @@ void draw_perfmon(SDL_Renderer *renderer)
     draw_text(renderer, temp, x0, y0 + 8, fore);
 
     // real fps
-    double rfps = ((force_10ms ? 1 : 10) - (videoelapsed * 1000));
+    double rfps = ((force_10ms ? 10 : 1) - (videoelapsed * 1000));
     double lfps = videoframecount / loopelapsed;
 
     snprintf(temp, 128, "VFS: %0.2f / %0.2f vs %d Hz", rfps, lfps, monitors[0].mon_actualrenderedframes);
@@ -221,7 +258,7 @@ void draw_perfmon(SDL_Renderer *renderer)
     draw_text(renderer, temp, x0, y0 + 24, fore);
 }
 
-void draw_menu(SDL_Renderer *renderer, int selected)
+static void draw_menu(SDL_Renderer *renderer, int selected)
 {
     int x0 = (SCREEN_W - BOX_W) / 2;
     int y0 = (SCREEN_H - BOX_H) / 2;
@@ -251,13 +288,9 @@ void draw_menu(SDL_Renderer *renderer, int selected)
 
         draw_text(renderer, menu_items[i], tx, ty, textColor);
     }
-
-#ifndef OSD_INSIDE_MAIN_LOOP
-    SDL_RenderPresent(renderer);
-#endif
 }
 
-void draw_file_selector(SDL_Renderer *renderer,
+static void draw_file_selector(SDL_Renderer *renderer,
                         char *title,
                         char files[][1024], int file_count,
                         int selected, int scroll_offset, int max_visible)
@@ -293,10 +326,6 @@ void draw_file_selector(SDL_Renderer *renderer,
             draw_text(renderer, files[index], tx, ty, textColor);
         }
     }
-
-#ifndef OSD_INSIDE_MAIN_LOOP
-    SDL_RenderPresent(renderer);
-#endif
 }
 
 void osd_init(void)
@@ -344,9 +373,14 @@ int osd_perfmon_toggle(SDL_Event event)
 {
     // switch it on or off
     if (osd_perfmon_is_open)
+    {
         osd_perfmon_is_open = 0;
+    }
     else
+    {
+        osd_measure_screen();
         osd_perfmon_is_open = 1;
+    }
 
     return 1;
 }
@@ -356,11 +390,7 @@ int osd_open(SDL_Event event)
     // ok opened
     // debug: fprintf(stderr, "OSD OPEN\n");
 
-    SDL_GetWindowSize(sdl_win, &SCREEN_W, &SCREEN_H);
-    BOX_W = (SCREEN_W / 4) * 3;
-    BOX_H = (SCREEN_H / 4) * 3;
-
-    max_visible = (BOX_H - TITLE_HEIGHT) / LINE_HEIGHT;
+    osd_measure_screen();
 
     osd_is_open = 1;
 
@@ -385,6 +415,42 @@ static void osd_cmd_run(char *c)
     free(l);
 }
 
+void osd_toast_f(const char *formt, ...)
+{
+    va_list ab;
+    va_start(ab, formt);
+
+    osd_measure_screen();
+
+    vsprintf(sdl_toast_text, formt, ab);
+    toasttime = time(NULL) + TOAST_TIMEDELAY;
+    showtoast = 1;
+    va_end(ab);
+}
+
+void osd_toast(const char *header, const char *message)
+{
+    osd_measure_screen();
+
+    sprintf(sdl_toast_text, "%s\n%s", header, message);
+    toasttime = time(NULL) + TOAST_TIMEDELAY;
+    showtoast = 1;
+}
+
+void osd_toast_present(void)
+{
+    // toast messages render in the lower part of the screen
+    if (showtoast)
+    {
+        if (toasttime - time(NULL) > 0 && strlen(sdl_toast_text) > 0)
+        {
+            draw_toast(sdl_render);
+        }
+        else
+            showtoast = 0;
+    }
+}
+
 void osd_perfmon_present(void)
 {
     // double shortcut, don't render if the main osd is open
@@ -393,15 +459,7 @@ void osd_perfmon_present(void)
 
     // performance monitor renders in a corner
 
-#ifndef OSD_INSIDE_MAIN_LOOP
-    SDL_LockMutex(sdl_mutex);
-#endif
-
     draw_perfmon(sdl_render);
-
-#ifndef OSD_INSIDE_MAIN_LOOP
-    SDL_UnlockMutex(sdl_mutex);
-#endif
 }
 
 void osd_present(void)
@@ -409,10 +467,6 @@ void osd_present(void)
     // shortcut
     if (!osd_is_open)
         return;
-
-#ifndef OSD_INSIDE_MAIN_LOOP
-    SDL_LockMutex(sdl_mutex);
-#endif
 
     if (state == STATE_MENU) {
         draw_menu(sdl_render, selected);
@@ -432,11 +486,6 @@ void osd_present(void)
     else if (state == STATE_FILESELECT_MO) {
         draw_file_selector(sdl_render, "SELECT MO IMAGE", files, file_count, file_selected, scroll_offset, max_visible);
     }
-
-
-#ifndef OSD_INSIDE_MAIN_LOOP
-    SDL_UnlockMutex(sdl_mutex);
-#endif
 }
 
 int osd_handle(SDL_Event event)

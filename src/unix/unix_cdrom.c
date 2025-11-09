@@ -143,6 +143,16 @@ cdrom_mount(uint8_t id, char *fn)
 }
 
 void
+cdrom_eject_unix(uint8_t id)
+{
+    cdrom_eject(id);
+
+    plat_cdrom_ui_update(id, 0);
+
+    config_save();
+}
+
+void
 mo_eject(uint8_t id)
 {
     mo_t *dev = (mo_t *) mo_drives[id].priv;

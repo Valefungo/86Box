@@ -152,12 +152,11 @@ sdl_blit_shim(int x, int y, int w, int h, int monitor_index)
 
     if (monitors[monitor_index].mon_screenshots)
         video_screenshot((uint32_t *) pixeldata, 0, 0, 2048);
+
     blitreq = 1;
 
     video_blit_complete_monitor(monitor_index);
 }
-
-void ui_window_title_real(void);
 
 void
 sdl_real_blit(SDL_Rect *r_src)
@@ -185,6 +184,7 @@ sdl_real_blit(SDL_Rect *r_src)
         fprintf(stderr, "SDL: unable to copy texture to renderer (%s)\n", SDL_GetError());
 
     // give the osd an opportunity to draw itself
+    osd_toast_present();
     osd_perfmon_present();
     osd_present();
 
@@ -207,12 +207,14 @@ sdl_blit(int x, int y, int w, int h)
     }
 
     SDL_LockMutex(sdl_mutex);
-
     if (resize_pending) {
         if (!video_fullscreen)
             sdl_resize(resize_w, resize_h);
+        if (resize_pending > 1)
+            printf("Multiple resize pending: %d\n", resize_pending);
         resize_pending = 0;
     }
+    SDL_UnlockMutex(sdl_mutex);
 
     r_src.x = x;
     r_src.y = y;
@@ -222,7 +224,6 @@ sdl_blit(int x, int y, int w, int h)
     blitreq = 0;
 
     sdl_real_blit(&r_src);
-    SDL_UnlockMutex(sdl_mutex);
 }
 
 static void
@@ -253,9 +254,6 @@ sdl_destroy_texture(void)
 void
 sdl_close(void)
 {
-    if (sdl_mutex != NULL)
-        SDL_LockMutex(sdl_mutex);
-
     /* Unregister our renderer! */
     video_setblit(NULL);
 
@@ -286,7 +284,7 @@ sdl_enable(int enable)
     if (sdl_flags == -1)
         return;
 
-    SDL_LockMutex(sdl_mutex);
+    // SDL_LockMutex(sdl_mutex);
     sdl_enabled = !!enable;
 
     if (enable == 1) {
@@ -294,7 +292,7 @@ sdl_enable(int enable)
         sdl_reinit_texture();
     }
 
-    SDL_UnlockMutex(sdl_mutex);
+    // SDL_UnlockMutex(sdl_mutex);
 }
 
 static void
@@ -331,9 +329,12 @@ sdl_reinit_texture(void)
 void
 sdl_set_fs(int fs)
 {
-    SDL_LockMutex(sdl_mutex);
+    // SDL_LockMutex(sdl_mutex);
     SDL_SetWindowFullscreen(sdl_win, fs ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
-    SDL_SetRelativeMouseMode((SDL_bool) mouse_capture);
+//    if (SDL_SetRelativeMouseMode((SDL_bool) mouse_capture) < 0 && mouse_capture)
+//        printf("No relative mouse mode available (sdl_set_fs)\n");
+    SDL_CaptureMouse((SDL_bool) mouse_capture);
+    SDL_ShowCursor(!(SDL_bool) mouse_capture);
 
     sdl_fs = fs;
 
@@ -343,7 +344,7 @@ sdl_set_fs(int fs)
         sdl_flags &= ~RENDERER_FULL_SCREEN;
 
     sdl_reinit_texture();
-    SDL_UnlockMutex(sdl_mutex);
+    // SDL_UnlockMutex(sdl_mutex);
 }
 
 void
@@ -360,7 +361,7 @@ sdl_resize(int x, int y)
     if ((x == cur_w) && (y == cur_h))
         return;
 
-    SDL_LockMutex(sdl_mutex);
+    // SDL_LockMutex(sdl_mutex);
 
     ww = x;
     wh = y;
@@ -378,18 +379,21 @@ sdl_resize(int x, int y)
 
     sdl_reinit_texture();
 
-    SDL_UnlockMutex(sdl_mutex);
+    printf("SDL Resize: %d, %d -> %d, %d\n", cur_ww, cur_wh, sdl_w, sdl_h);
+
+    // SDL_UnlockMutex(sdl_mutex);
 }
+
 void
 sdl_reload(void)
 {
     if (sdl_flags & RENDERER_HARDWARE) {
-        SDL_LockMutex(sdl_mutex);
+        // SDL_LockMutex(sdl_mutex);
 
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, video_filter_method ? "1" : "0");
         sdl_reinit_texture();
 
-        SDL_UnlockMutex(sdl_mutex);
+        // SDL_UnlockMutex(sdl_mutex);
     }
 }
 
@@ -478,24 +482,30 @@ sdl_pause(void)
 void
 plat_mouse_capture(int on)
 {
-    SDL_LockMutex(sdl_mutex);
-    SDL_SetRelativeMouseMode((SDL_bool) on);
+    // SDL_LockMutex(sdl_mutex);
     mouse_capture = on;
-    SDL_UnlockMutex(sdl_mutex);
+
+//    if (SDL_SetRelativeMouseMode((SDL_bool) on) < 0 && on)
+//        printf("No relative mouse mode available (plat_mouse_capture)\n");
+    SDL_CaptureMouse((SDL_bool) mouse_capture);
+    SDL_ShowCursor(!(SDL_bool) mouse_capture);
+
+    // SDL_UnlockMutex(sdl_mutex);
 }
 
 void
 plat_resize(int w, int h, UNUSED(int monitor_index))
 {
     SDL_LockMutex(sdl_mutex);
+    // printf("plat_resize to %d %d for %d\n", w, h, monitor_index);
+    osd_toast_f("Monitor %d: %d x %d", monitor_index, w, h);
     resize_w       = w;
     resize_h       = h;
-    resize_pending = 1;
+    resize_pending++;
     SDL_UnlockMutex(sdl_mutex);
 }
 
 wchar_t    sdl_win_title[512] = { L'8', L'6', L'B', L'o', L'x', 0 };
-SDL_mutex *titlemtx           = NULL;
 
 void
 ui_window_title_real(void)
@@ -553,5 +563,6 @@ ui_deinit_monitor(UNUSED(int monitor_index))
 void
 plat_resize_request(UNUSED(int w), UNUSED(int h), int monitor_index)
 {
-    atomic_store((&doresize_monitors[monitor_index]), 1);
+    printf("plat_resize_request: %d, %d for %d\n", w, h, monitor_index);
+    atomic_store_bool((&doresize_monitors[monitor_index]), 1);
 }

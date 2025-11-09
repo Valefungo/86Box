@@ -20,7 +20,7 @@
 using atomic_int = std::atomic_int;
 extern "C" {
 #else
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #endif
 
 #define ACPI_TIMER_FREQ 3579545

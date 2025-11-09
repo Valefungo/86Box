@@ -18,5 +18,9 @@ extern void sdl_enable(int enable);
 extern void sdl_set_fs(int fs);
 extern void sdl_reload(void);
 extern void sdl_blit(int x, int y, int w, int h);
+extern void sdl_reinit_texture(void);
+
+extern void ui_window_title_real(void);
+
 
 #endif /*_UNIX_SDL_H*/

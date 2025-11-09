@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <wchar.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <stdbool.h>
 #define HAVE_STDARG_H
 #include <86box/86box.h>

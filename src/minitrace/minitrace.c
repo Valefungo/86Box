@@ -32,7 +32,7 @@
 #include <unistd.h>
 #endif
 
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <minitrace/minitrace.h>
 
 #ifdef __GNUC__
@@ -298,7 +298,7 @@ void mtr_start(void) {
     pthread_cond_init(&buffer_not_full_cond, NULL);
     pthread_cond_init(&buffer_full_cond, NULL);
 #endif
-    atomic_store(&is_tracing, TRUE);
+    atomic_store_int(&is_tracing, TRUE);
     init_flushing_thread();
 }
 
@@ -306,12 +306,12 @@ void mtr_stop(void) {
 #ifndef MTR_ENABLED
     return;
 #endif
-    atomic_store(&is_tracing, FALSE);
-    atomic_store(&stop_flushing_requested, TRUE);
+    atomic_store_int(&is_tracing, FALSE);
+    atomic_store_int(&stop_flushing_requested, TRUE);
     pthread_cond_signal(&buffer_not_full_cond);
     pthread_cond_signal(&buffer_full_cond);
     join_flushing_thread();
-    atomic_store(&stop_flushing_requested, FALSE);
+    atomic_store_int(&stop_flushing_requested, FALSE);
 }
 
 // TODO: fwrite more than one line at a time.

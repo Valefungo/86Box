@@ -19,7 +19,7 @@
 
 #ifndef __cplusplus
 /* Yes, a big no-no, but I'm saving myself time here. */
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #endif
 
 #define MOUSE_TYPE_NONE     0 /* no mouse configured */

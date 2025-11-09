@@ -30,7 +30,7 @@
 #include <string.h>
 #include <time.h>
 #include <wchar.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <unistd.h>
 #include <math.h>
 
@@ -120,7 +120,6 @@
 /* Stuff that used to be globally declared in plat.h but is now extern there
    and declared here instead. */
 int          dopause = 1;  /* system is paused */
-atomic_flag  doresize; /* screen resize requested */
 volatile int is_quit;  /* system exit requested */
 uint64_t     timer_freq;
 char         emu_version[200]; /* version ID string */
@@ -331,8 +330,8 @@ __thread int is_cpu_thread = 0;
 
 static wchar_t mouse_msg[3][200];
 
-static volatile atomic_int do_pause_ack = 0;
-static volatile atomic_int pause_ack = 0;
+static atomic_int do_pause_ack = 0;
+static atomic_int pause_ack = 0;
 
 #define LOG_SIZE_BUFFER 8192            /* Log size buffer */
 
@@ -1836,8 +1835,8 @@ void
 ack_pause(void)
 {
     if (atomic_load(&do_pause_ack)) {
-        atomic_store(&do_pause_ack, 0);
-        atomic_store(&pause_ack, 1);
+        atomic_store_int(&do_pause_ack, 0);
+        atomic_store_int(&pause_ack, 1);
     }
 }
 
@@ -1918,6 +1917,8 @@ set_screen_size_monitor(int x, int y, int monitor_index)
     double dy;
     double dtx;
     double dty;
+
+    printf("86Box ini plat_resize_request %d, %d for %d\n", x, y, monitor_index);
 
     /* Make sure we keep usable values. */
 #if 0
@@ -2021,6 +2022,7 @@ set_screen_size_monitor(int x, int y, int monitor_index)
             break;
     }
 
+    printf("86Box fin plat_resize_request %d, %d for %d\n", monitors[monitor_index].mon_scrnsz_x, monitors[monitor_index].mon_scrnsz_y, monitor_index);
     plat_resize_request(monitors[monitor_index].mon_scrnsz_x, monitors[monitor_index].mon_scrnsz_y, monitor_index);
 }
 
@@ -2074,7 +2076,7 @@ do_pause(int p)
         while (!atomic_load(&pause_ack))
             ;
     }
-    atomic_store(&pause_ack, 0);
+    atomic_store_int(&pause_ack, 0);
 }
 
 // Helper to find an accelerator key and return it's index in acc_keys

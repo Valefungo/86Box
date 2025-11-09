@@ -22,7 +22,7 @@
 #include <dlfcn.h>
 #include <wchar.h>
 #include <pwd.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 
 #ifdef __APPLE__
 #    include "macOSXGlue.h"
@@ -55,6 +55,11 @@
 
 extern SDL_Window         *sdl_win;
 
+extern int gfxcard[GFXCARD_MAX];
+
+// we have no place to put this very specific declaration
+extern void cdrom_eject_unix(uint8_t id);
+
 static int      first_use = 1;
 static uint64_t StartingTime;
 static uint64_t Frequency;
@@ -70,10 +75,11 @@ extern wchar_t  sdl_win_title[512];
 plat_joystick_state_t plat_joystick_state[MAX_PLAT_JOYSTICKS];
 joystick_state_t      joystick_state[GAMEPORT_MAX][MAX_JOYSTICKS];
 int             joysticks_present;
-SDL_mutex      *blitmtx;
 SDL_threadID    eventthread;
 static int      exit_event         = 0;
 static int      fullscreen_pending = 0;
+static int      mouse_current_x = 0;
+static int      mouse_current_y = 0;
 
 // Two keys to be pressed together to open the OSD, variables to make them configurable in future
 static uint16_t osd_open_first_key = SDL_SCANCODE_RCTRL;
@@ -630,12 +636,14 @@ main_thread(UNUSED(void *param))
         /* If needed, handle a screen resize. */
         if (atomic_load(&doresize_monitors[0]) && !video_fullscreen && !is_quit)
         {
+            printf("Resize requested: %d for %d\n", vid_resize, monitor_index_global);
+
             if (vid_resize & 2)
                 plat_resize(fixed_size_x, fixed_size_y, 0);
             else
                 plat_resize(scrnsz_x, scrnsz_y, 0);
 
-            atomic_store(&doresize_monitors[0], 1);
+            atomic_store_bool(&doresize_monitors[0], 0);
         }
     }
 
@@ -670,12 +678,6 @@ do_stop(void)
         video_blit_complete();
     }
 
-    while (SDL_TryLockMutex(blitmtx) == SDL_MUTEX_TIMEDOUT) {
-        if (blitreq) {
-            blitreq = 0;
-            video_blit_complete();
-        }
-    }
     startblit();
 
     is_quit = 1;
@@ -723,6 +725,7 @@ ui_msgbox_header(int flags, void *header, void *message)
         int button      = 0;
         msgdata.title   = header;
         msgdata.message = message;
+        osd_toast(msgdata.title, msgdata.message);
         SDL_ShowMessageBox(&msgdata, &button);
         return button;
     } else {
@@ -731,9 +734,10 @@ ui_msgbox_header(int flags, void *header, void *message)
         char *res2      = SDL_iconv_string("UTF-8", sizeof(wchar_t) == 2 ? "UTF-16LE" : "UTF-32LE", (char *) header, wcslen(header) * sizeof(wchar_t) + sizeof(wchar_t));
         msgdata.message = res;
         msgdata.title   = res2;
+        osd_toast(msgdata.title, msgdata.message);
         SDL_ShowMessageBox(&msgdata, &button);
-        free(res);
-        free(res2);
+        SDL_free(res);
+        SDL_free(res2);
         return button;
     }
 
@@ -768,8 +772,6 @@ ui_sb_bugui(UNUSED(char *str))
     /* No-op. */
 }
 
-extern void sdl_blit(int x, int y, int w, int h);
-
 typedef struct mouseinputdata {
     int deltax;
     int deltay;
@@ -777,7 +779,6 @@ typedef struct mouseinputdata {
     int mousebuttons;
 } mouseinputdata;
 
-SDL_mutex *mousemutex;
 int        real_sdl_w;
 int        real_sdl_h;
 
@@ -1127,17 +1128,23 @@ unix_executeLine(char *line)
                     || fn[strlen(fn) - 1] == '"')
                     fn[strlen(fn) - 1] = '\0';
                 printf("Inserting disc into CD-ROM drive %hhu: %s\n", id, fn);
+                osd_toast_f("Inserting disc into CD-ROM drive %hhu:\n%s", id, fn);
                 cdrom_mount(id, fn);
             }
         } else if (strncasecmp(xargv[0], "fddeject", 8) == 0 && cmdargc >= 2) {
+            osd_toast_f("Floppy eject");
             floppy_eject(atoi(xargv[1]));
         } else if (strncasecmp(xargv[0], "cdeject", 8) == 0 && cmdargc >= 2) {
-            cdrom_mount(atoi(xargv[1]), "");
+            osd_toast_f("CD/DVD eject");
+            cdrom_eject_unix(atoi(xargv[1]));
         } else if (strncasecmp(xargv[0], "moeject", 8) == 0 && cmdargc >= 2) {
+            osd_toast_f("Magneto-Optical eject");
             mo_eject(atoi(xargv[1]));
         } else if (strncasecmp(xargv[0], "carteject", 8) == 0 && cmdargc >= 2) {
+            osd_toast_f("Cartridge eject");
             cartridge_eject(atoi(xargv[1]));
         } else if (strncasecmp(xargv[0], "rdiskeject", 8) == 0 && cmdargc >= 2) {
+            osd_toast_f("Removable disk eject");
             rdisk_eject(atoi(xargv[1]));
         } else if (strncasecmp(xargv[0], "fddload", 7) == 0 && cmdargc >= 4) {
             uint8_t id;
@@ -1157,6 +1164,7 @@ unix_executeLine(char *line)
                     || fn[strlen(fn) - 1] == '"')
                     fn[strlen(fn) - 1] = '\0';
                 printf("Inserting disk into floppy drive %c: %s\n", id + 'A', fn);
+                osd_toast_f("Inserting disk into floppy drive %c:\n%s", id + 'A', fn);
                 floppy_mount(id, fn, wp);
             }
         } else if (strncasecmp(xargv[0], "moload", 7) == 0 && cmdargc >= 4) {
@@ -1177,6 +1185,7 @@ unix_executeLine(char *line)
                     || fn[strlen(fn) - 1] == '"')
                     fn[strlen(fn) - 1] = '\0';
                 printf("Inserting into mo drive %hhu: %s\n", id, fn);
+                osd_toast_f("Inserting into mo drive %hhu:\n%s", id, fn);
                 mo_mount(id, fn, wp);
             }
         } else if (strncasecmp(xargv[0], "cartload", 7) == 0 && cmdargc >= 4) {
@@ -1197,6 +1206,7 @@ unix_executeLine(char *line)
                     || fn[strlen(fn) - 1] == '"')
                     fn[strlen(fn) - 1] = '\0';
                 printf("Inserting tape into cartridge holder %hhu: %s\n", id, fn);
+                osd_toast_f("Inserting tape into cartridge holder %hhu:\n%s", id, fn);
                 cartridge_mount(id, fn, wp);
             }
         } else if (strncasecmp(xargv[0], "rdiskload", 7) == 0 && cmdargc >= 4) {
@@ -1217,6 +1227,7 @@ unix_executeLine(char *line)
                     || fn[strlen(fn) - 1] == '"')
                     fn[strlen(fn) - 1] = '\0';
                 printf("Inserting disk into removable disk drive %c: %s\n", id + 'A', fn);
+                osd_toast_f("Inserting disk into removable disk drive %c:\n%s", id + 'A', fn);
                 rdisk_mount(id, fn, wp);
             }
         }
@@ -1258,7 +1269,6 @@ monitor_thread(UNUSED(void *param))
 #endif
 }
 
-extern int gfxcard[GFXCARD_MAX];
 int
 main(int argc, char **argv)
 {
@@ -1283,18 +1293,6 @@ main(int argc, char **argv)
         gfxcard[i]  = 0;
 
     eventthread = SDL_ThreadID();
-
-    blitmtx    = SDL_CreateMutex();
-    if (!blitmtx) {
-        fprintf(stderr, "Failed to create blit mutex: %s", SDL_GetError());
-        return -1;
-    }
-
-    mousemutex = SDL_CreateMutex();
-    if (!mousemutex) {
-        fprintf(stderr, "Failed to create mouse mutex: %s", SDL_GetError());
-        return -1;
-    }
 
     libedithandle = dlopen(LIBEDIT_LIBRARY, RTLD_LOCAL | RTLD_LAZY);
     if (libedithandle) {
@@ -1354,8 +1352,6 @@ main(int argc, char **argv)
                     case SDL_RENDER_DEVICE_RESET:
                     case SDL_RENDER_TARGETS_RESET:
                     {
-                        extern void sdl_reinit_texture(void);
-
                         printf("reinit tex\n");
                         sdl_reinit_texture();
                         break;
@@ -1401,18 +1397,21 @@ main(int argc, char **argv)
                                     event.wheel.x *= -1;
                                     event.wheel.y *= -1;
                                 }
-                                SDL_LockMutex(mousemutex);
                                 mouse_set_z(event.wheel.y);
-                                SDL_UnlockMutex(mousemutex);
                             }
                             break;
                         }
                     case SDL_MOUSEMOTION:
                         {
                             if (mouse_capture || video_fullscreen) {
-                                SDL_LockMutex(mousemutex);
-                                mouse_scale(event.motion.xrel, event.motion.yrel);
-                                SDL_UnlockMutex(mousemutex);
+                                int xrel = event.motion.x - mouse_current_x;
+                                int yrel = event.motion.y - mouse_current_y;
+                                mouse_current_x = event.motion.x;
+                                mouse_current_y = event.motion.y;
+                                // SDL mouse relative indicators are not always reliable
+                                // printf("mouse move: %d, %d - %d, %d - %d, %d\n", event.motion.x, event.motion.y, xrel, yrel, event.motion.xrel, event.motion.yrel);
+                                // mouse_scale(event.motion.xrel, event.motion.yrel);
+                                mouse_scale(xrel, yrel);
                             }
                             break;
                         }
@@ -1431,14 +1430,12 @@ main(int argc, char **argv)
                         {
                             // See SDL_TouchFingerEvent
                             if (mouse_capture || video_fullscreen) {
-                                SDL_LockMutex(mousemutex);
 
                                 // Real multiplier is the window size
                                 int w, h;
                                 SDL_GetWindowSize(sdl_win, &w, &h);
 
                                 mouse_scale((int)(event.tfinger.dx * w), (int)(event.tfinger.dy * h));
-                                SDL_UnlockMutex(mousemutex);
                             }
                             break;
                         }
@@ -1479,20 +1476,16 @@ main(int argc, char **argv)
                                     default:
                                         printf("Unknown mouse button %d\n", event.button.button);
                                 }
-                                SDL_LockMutex(mousemutex);
                                 if (event.button.state == SDL_PRESSED)
                                     mouse_set_buttons_ex(mouse_get_buttons_ex() | buttonmask);
                                 else
                                     mouse_set_buttons_ex(mouse_get_buttons_ex() & ~buttonmask);
-                                SDL_UnlockMutex(mousemutex);
                             }
                             break;
                         }
                     case SDL_RENDER_DEVICE_RESET:
                     case SDL_RENDER_TARGETS_RESET:
                         {
-                            extern void sdl_reinit_texture(void);
-
                             sdl_reinit_texture();
                             break;
                         }
@@ -1589,7 +1582,6 @@ main(int argc, char **argv)
         }
 
         if (title_set) {
-            extern void ui_window_title_real(void);
             ui_window_title_real();
         }
         if (video_fullscreen && keyboard_isfsexit()) {
@@ -1607,8 +1599,6 @@ main(int argc, char **argv)
     }
 
     printf("\n");
-    SDL_DestroyMutex(blitmtx);
-    SDL_DestroyMutex(mousemutex);
     SDL_Quit();
     if (f_rl_callback_handler_remove)
         f_rl_callback_handler_remove();
@@ -1691,7 +1681,6 @@ joystick_process(uint8_t gp)
 void
 startblit(void)
 {
-    SDL_LockMutex(blitmtx);
     gettimeofday(&videostart, NULL);
 }
 
@@ -1700,7 +1689,6 @@ endblit(void)
 {
     gettimeofday(&videostop, NULL);
     videoelapsed = (videostop.tv_sec - videostart.tv_sec) + ((videostop.tv_usec - videostart.tv_usec) / 1000000.0);
-    SDL_UnlockMutex(blitmtx);
 }
 
 /* API */

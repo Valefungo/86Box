@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <86box/86box.h>
 #include <86box/io.h>
 #include "cpu.h"

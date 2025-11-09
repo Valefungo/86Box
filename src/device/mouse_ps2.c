@@ -13,7 +13,7 @@
  *          Copyright 2023-2025 Miran Grca.
  */
 #include <stdarg.h>
-#include <stdatomic.h>
+#include "86box_atomics.h"
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>

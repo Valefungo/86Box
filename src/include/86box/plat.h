@@ -92,7 +92,7 @@ extern int strnicmp(const char *s1, const char *s2, size_t n);
 #    define atomic_bool_t std::atomic_bool
 extern "C" {
 #else
-#    include <stdatomic.h>
+#    include "86box_atomics.h"
 #    define atomic_flag_t atomic_flag
 #    define atomic_bool_t atomic_bool
 #endif

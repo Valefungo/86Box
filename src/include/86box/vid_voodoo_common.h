@@ -33,7 +33,7 @@
 #    include <atomic>
 using atomic_int = std::atomic<int>;
 #else
-#    include <stdatomic.h>
+#    include "86box_atomics.h"
 #endif
 
 enum {

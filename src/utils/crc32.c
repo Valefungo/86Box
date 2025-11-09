@@ -195,7 +195,7 @@ typedef struct once_s once_t;
 #if defined(__STDC__) && __STDC_VERSION__ >= 201112L && \
     !defined(__STDC_NO_ATOMICS__)
 
-#include <stdatomic.h>
+#include "86box_atomics.h"
 
 /* Structure for once(), which must be initialized with ONCE_INIT. */
 struct once_s {
@@ -216,7 +216,7 @@ static void once(once_t *state, void (*init)(void)) {
                 ;
         else {
             init();
-            atomic_store(&state->done, 1);
+            atomic_store_int(&state->done, 1);
         }
     }
 }

@@ -23,10 +23,6 @@ if(HAIKU)
     set(OPENAL ON)
 endif()
 
-if(NOT DEFINED QT OR QT)
-    list(APPEND VCPKG_MANIFEST_FEATURES "qt-ui")
-endif()
-
 if(NOT DEFINED OPENAL OR OPENAL)
     list(APPEND VCPKG_MANIFEST_FEATURES "openal")
 endif()
@@ -63,9 +59,6 @@ if(VCPKG_TOOLCHAIN)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
         set(STATIC_BUILD OFF)
     endif()
-
-    # `vcpkg.json` defaults to Qt6
-    set(USE_QT6 ON)
 endif()
 
 if(WIN32)
@@ -114,10 +107,6 @@ if(WIN32)
     add_compile_definitions(_WINSOCK_DEPRECATED_NO_WARNINGS)
 endif()
 
-if(NOT (WIN32 OR APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Linux"))
-    set(DISCORD OFF)
-endif()
-
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_FIND_PACKAGE_PREFER_CONFIG ON)
@@ -133,14 +122,11 @@ option(RTMIDI       "RtMidi"                                                    
 option(FLUIDSYNTH   "FluidSynth"                                                 ON)
 option(MUNT         "MUNT"                                                       ON)
 option(SOUNDCANVAS  "Sound Canvas (CLAP)"                                        ON)
-option(VNC          "VNC renderer"                                               OFF)
 option(MINITRACE    "Enable Chrome tracing using the modified minitrace library" OFF)
 option(GDBSTUB      "Enable GDB stub server for debugging"                       OFF)
 option(DEV_BRANCH   "Development branch"                                         OFF)
-option(DISCORD      "Discord Rich Presence support"                              ON)
 option(DEBUGREGS486 "Enable debug register opeartion on 486+ CPUs"               OFF)
 option(LIBASAN      "Enable compilation with the addresss sanitizer"             OFF)
-option(QT           "Use the Qt-based user interface"                            ON)
 
 if((ARCH STREQUAL "arm64"))
     set(NEW_DYNAREC ON)
@@ -166,7 +152,7 @@ else()
     option(CPPTHREADS "C++11 threads" ON)
 endif()
 
-if(WIN32 AND NOT QT)
+if(WIN32)
     # Force console subsystem when building the SDL frontend
     set(CMAKE_WIN32_EXECUTABLE OFF CACHE BOOL "Build a Windows GUI executable" FORCE)
 
@@ -194,37 +180,6 @@ cmake_dependent_option(WACOM          "Wacom Input Devices"                     
 cmake_dependent_option(XL24           "ATI VGA Wonder XL24 (ATI-28800-6)"        ON    "DEV_BRANCH"  OFF)
 cmake_dependent_option(VFIO           "Virtual Function I/O"                     ON    "DEV_BRANCH"  OFF)
 cmake_dependent_option(SOFTMODEM      "AC'97 Softmodem"                          ON    "DEV_BRANCH"  OFF)
-
-# Ditto but for Qt
-if(QT)
-    option(USE_QT6 "Use Qt6 instead of Qt5" OFF)
-    if(APPLE)
-        option(MOLTENVK "Use MoltenVK libraries for Vulkan support on macOS. Requires a Vulkan-enabled QT." OFF)
-    endif()
-
-    option(LIBRASHADER "Build with librashader support" ON)
-
-    if(LIBRASHADER)
-        option(LIBRASHADER_STATIC "Statically link with librashader" OFF)
-        if(LIBRASHADER_STATIC)
-            option(LIBRASHADER_STATIC_FIND_LIB "Find static librashader library instead of building." OFF)
-            if (NOT LIBRASHADER_STATIC_FIND_LIB)
-                set(FETCHCONTENT_QUIET 0)
-                FetchContent_Declare(librashader
-                                    GIT_REPOSITORY https://github.com/SnowflakePowered/librashader.git
-                                    GIT_TAG f810cdf6e856e5a5215b1e84a21c978bc3367f23 GIT_SUBMODULES "" GIT_PROGRESS 1)
-                                    
-                FetchContent_Declare(corrosion
-                                    GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
-                                    GIT_TAG c4786e7ae2d5ade784aca29448df362c874ed04e)
-
-                FetchContent_MakeAvailable(librashader corrosion)            
-                FetchContent_GetProperties(librashader SOURCE_DIR LIBRASHADER_SOURCE_DIR)
-                corrosion_import_crate(MANIFEST_PATH ${LIBRASHADER_SOURCE_DIR}/librashader-capi/Cargo.toml NO_DEFAULT_FEATURES FEATURES runtime-vulkan CRATE_TYPES staticlib)
-            endif()
-        endif()
-    endif()
-endif()
 
 # Determine the build type
 set(RELEASE_BUILD   OFF)

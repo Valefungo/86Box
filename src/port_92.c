@@ -82,8 +82,6 @@ port_92_pulse(UNUSED(void *priv))
 {
     softresetx86(); /* Pulse reset! */
     cpu_set_edx();
-    if (machines[machine].init == machine_at_pl5600d_init)
-        smbase = 0x00030000;
 
     flushmmucache();
 

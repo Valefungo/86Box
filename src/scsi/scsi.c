@@ -39,7 +39,6 @@
 #include <86box/scsi_ncr53c8xx.h>
 #include <86box/scsi_pcscsi.h>
 #include <86box/scsi_qlogic.h>
-#include <86box/scsi_spock.h>
 
 int scsi_card_current[SCSI_CARD_MAX] = { 0, 0, 0, 0 };
 double scsi_bus_speed[SCSI_BUS_MAX] = { 0.0, 0.0, 0.0, 0.0 };
@@ -71,14 +70,6 @@ static SCSI_CARD scsi_cards[] = {
     { &buslogic_542bh_device,    },
     { &buslogic_545s_device,     },
     { &buslogic_545c_device,     },
-    /* MCA */
-    { &aha1640_device,           },
-    { &buslogic_640a_device,     },
-    { &spock_device,             },
-    { &tribble_device,           },
-    { &ncr53c90a_mca_device,     },
-    { &scsi_rt1000mc_device,     },
-    { &scsi_t228_device,         },
     /* VLB */
     { &buslogic_445s_device,     },
     { &buslogic_445c_device,     },

@@ -84,11 +84,6 @@ static const struct {
     { &ide_qua_device                       },
     { &st506_at_wd1003_device               },
     { &esdi_at_wd1007vse1_device            },
-    /* MCA */
-    { &esdi_ps2_device                      },
-    { &st506_ps2_device                     },  
-    { &esdi_integrated_device               },
-    { &mcide_device                         },
     /* VLB */
 #if 0
     { &ide_ali5213_device                   }, /* TODO: to add standalone ADI2 HDC */

@@ -217,8 +217,6 @@ extern int network_rx_on_tx_put_pkt(netcard_t *card, netpkt_t *pkt);
 
 #ifdef EMU_DEVICE_H
 /* 3Com Etherlink */
-extern const device_t threec501_device;
-extern const device_t threec503_device;
 
 /* Novell NE2000 and compatibles */
 extern const device_t ne1000_device;
@@ -247,20 +245,10 @@ extern const device_t modem_device;
 extern const device_t plip_device;
 
 /* Realtek RTL8139C+ */
-extern const device_t rtl8139c_plus_device;
 
 /* DEC Tulip */
-extern const device_t dec_tulip_device;
-extern const device_t dec_tulip_21140_device;
-extern const device_t dec_tulip_21040_device;
 
 /* WD 80x3 */
-extern const device_t wd8003e_device;
-extern const device_t wd8003eb_device;
-extern const device_t wd8013ebt_device;
-extern const device_t wd8003eta_device;
-extern const device_t wd8003ea_device;
-extern const device_t wd8013epa_device;
 #endif
 
 #ifdef __cplusplus

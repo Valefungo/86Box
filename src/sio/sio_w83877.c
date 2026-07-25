@@ -528,16 +528,9 @@ w83877_init(const device_t *info)
 
     dev->has_ide = (info->local >> 16) & 0xff;
 
-    if (machines[machine].init == machine_at_ficpa2012_init) {
-        dev->dma_map[0] = 4;
-        dev->dma_map[1] = 3;
-        dev->dma_map[2] = 1;
-        dev->dma_map[3] = 2;
-    } else {
-        dev->dma_map[0] = 4;
-        for (int i = 1; i < 4; i++)
-            dev->dma_map[i] = i;
-    }
+    dev->dma_map[0] = 4;
+    for (int i = 1; i < 4; i++)
+        dev->dma_map[i] = i;
 
     memset(dev->irq_map, 0xff, 16);
     dev->irq_map[0] = 0xff;

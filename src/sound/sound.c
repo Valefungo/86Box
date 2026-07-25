@@ -30,7 +30,6 @@
 #include <86box/midi.h>
 #include <86box/plat.h>
 #include <86box/thread.h>
-#include <86box/snd_ac97.h>
 #include <86box/timer.h>
 #include <86box/snd_mpu401.h>
 #include <86box/sound.h>
@@ -141,63 +140,14 @@ static const SOUND_CARD sound_cards[] = {
     { &device_internal              },
     /* ISA */
     { &adgold_device                },
-    { &soundmaster_device           },
-    { &cms_device                   },
-    { &imfc_device                  },
-    { &ssi2001_device               },
-    { &thunderboard_device          },
-    { &mmb_device                   },
-#ifdef USE_LIBSERIALPORT /*The following devices required LIBSERIALPORT*/
-    { &opl2board_device             },
-#endif
-    { &pas_device                   },
     { &sb_1_device                  },
     { &sb_15_device                 },
     { &sb_2_device                  },
     { &sb_pro_v1_device             },
     { &sb_pro_v2_device             },
-    { &entertainer_device           },
-    { &pssj_isa_device              },
-    { &saaym_device                 },
-    { &tndy_device                  },
     /* ISA/Sidecar */
     { &adlib_device                 },
-    { &soundmasterplus_device       },
-    { &voicemasterkey_device        },
-    { &isadacr0_device              },
-    { &isadacr1_device              },
-    { &soundman_device              },
     /* ISA16 */
-    { &acermagic_s20_device         },
-    { &ad1816_device                },
-    { &aztpr16_device               },
-    { &azt1605_device               },
-    { &azt2316a_device              },
-    { &azt2316r_device              },
-    { &azt2320_device               },
-    { &sb_goldfinch_device          },
-    { &cs4232_device                },
-    { &cs4235_device                },
-    { &cs4236b_device               },
-    { &ess_688_device               },
-    { &ess_ess0100_pnp_device       },
-    { &ess_ess0968_pnp_688_device   },
-    { &ess_1688_device              },
-    { &ess_ess0102_pnp_device       },
-    { &ess_ess0968_pnp_device       },
-    { &ess_1788_device              },
-    { &ess_1868_device              },
-    { &ess_1869_device              },
-    { &gus_device                   },
-    { &gus_v37_device               },
-    { &gus_max_device               },
-    { &gus_ace_device               },
-    { &mirosound_pcm10_device       },
-    { &opti_82c930_device           },
-    { &opti_82c931_device           },
-    { &pasplus_device               },
-    { &pas16_device                 },
-    { &pas16d_device                },
     { &sb_16_device                 },
     { &sb_16_pnp_device             },
     { &sb_16_pnp_ide_device         },
@@ -213,32 +163,6 @@ static const SOUND_CARD sound_cards[] = {
     { &sb_vibra16cl_device          },
     { &sb_vibra16s_device           },
     { &sb_vibra16xv_device          },
-    { &wss_device                   },
-    { &ymf701_device                },
-    { &ymf718_device                },
-    { &ymf719_device                },
-    /* MCA */
-    { &adlib_mca_device             },
-    { &ess_chipchat_16_mca_device   },
-    { &ncr_business_audio_device    },
-    { &sb_mcv_device                },
-    { &sb_pro_mcv_device            },
-    { &sb_16_reply_mca_device       },
-    { &ess_soundpiper_16_mca_device },
-    { &ess_soundpiper_32_mca_device },
-    /* PCI */
-    { &cmi8338_device               },
-    { &cmi8738_device               },
-    { &es1370_device                },
-    { &es1371_device                },
-    { &es1373_device                },
-    { &ct5880_device                },
-    /* AC97 */
-    { &ad1881_device                },
-    { &cs4297a_device               },
-#ifdef USE_SOFTMODEM
-    { &si3036_device                },
-#endif
     { NULL                          }
     // clang-format on
 };

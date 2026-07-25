@@ -712,7 +712,6 @@ load_video(void)
         video_card_get_flags(gfxcard[0]) == VIDEO_FLAG_TYPE_8514)
         ini_section_delete_var(cat, "8514a");
 
-    voodoo_enabled                   = !!ini_section_get_int(cat, "voodoo", 0);
     ibm8514_standalone_enabled       = !!ini_section_get_int(cat, "8514a", 0);
     ibm8514_active                   = ibm8514_standalone_enabled;
     xga_standalone_enabled           = !!ini_section_get_int(cat, "xga", 0);
@@ -2790,12 +2789,6 @@ config_load(void)
         c = ini_find_section(config, "EGA");
         if (c != NULL)
             ini_rename_section(c, "IBM EGA");
-        c = ini_find_section(config, "3DFX Voodoo Graphics");
-        if (c != NULL)
-            ini_rename_section(c, "3Dfx Voodoo Graphics");
-        c = ini_find_section(config, "3dfx Voodoo Banshee");
-        if (c != NULL)
-            ini_rename_section(c, "3Dfx Voodoo Banshee");
 
         config_log("VM config loaded.\n\n");
     }
@@ -3262,11 +3255,6 @@ save_video(void)
         ini_section_set_int(cat, "vid_cga_comp_saturation", vid_cga_comp_saturation);
     else
         ini_section_delete_var(cat, "vid_cga_comp_saturation");
-
-    if (voodoo_enabled == 0)
-        ini_section_delete_var(cat, "voodoo");
-    else
-        ini_section_set_int(cat, "voodoo", voodoo_enabled);
 
     if (ibm8514_standalone_enabled == 0)
         ini_section_delete_var(cat, "8514a");

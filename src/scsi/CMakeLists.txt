@@ -30,5 +30,4 @@ add_library(scsi OBJECT
     scsi_ncr53c8xx.c
     scsi_pcscsi.c
     scsi_ql1xxx.c
-    scsi_spock.c
 )

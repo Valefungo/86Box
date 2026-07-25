@@ -21,17 +21,11 @@ list(APPEND net_sources
     net_slirp.c
     net_switch.c
     net_dp8390.c
-    net_3c501.c
-    net_3c503.c
     net_ne2000.c
     net_pcnet.c
-    net_wd8003.c
     net_plip.c
     net_event.c
     net_null.c
-    net_tulip.c
-    net_smc_epic100.c
-    net_rtl8139.c
     net_l80225.c
     net_modem.c
     utils/getline.c

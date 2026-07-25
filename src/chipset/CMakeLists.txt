@@ -24,10 +24,6 @@ add_library(chipset OBJECT
     ali1429.c
     ali1435.c
     ali1489.c
-    ali1531.c
-    ali1541.c
-    ali1543.c
-    ali1621.c
     ali6117.c
     ali1409.c
     compaq.c
@@ -41,9 +37,7 @@ add_library(chipset OBJECT
     intel_82335.c
     intel_420ex.c
     intel_4x0.c
-    intel_i450kx.c
     intel_sio.c
-    intel_piix.c
     isa486c.c
     ../ioapic.c
     laserxt.c
@@ -58,8 +52,6 @@ add_library(chipset OBJECT
     opti602.c
     opti822.c
     opti895.c
-    opti5x7.c
-    opti55x.c
     philips.c
     sanyo.c
     scamp.c
@@ -67,32 +59,12 @@ add_library(chipset OBJECT
     sis_85c310.c
     sis_85c4xx.c
     sis_85c496.c
-    sis_85c50x.c
-    sis_5511.c
-    sis_5571.c
-    sis_5581.c
-    sis_5591.c
-    sis_5600.c
-    sis_5511_h2p.c
-    sis_5571_h2p.c
-    sis_5581_h2p.c
-    sis_5591_h2p.c
-    sis_5600_h2p.c
-    sis_5513_p2i.c
-    sis_5513_ide.c
-    sis_5572_usb.c
-    sis_5595_pmu.c
-    sis_55xx.c
     sl82c461.c
     stpc.c
     via_vt82c49x.c
     via_vt82c505.c
     umc_8886.c
     umc_hb4.c
-    umc_8890.c
-    via_apollo.c
-    via_pipc.c
     vl82c480.c
-    vl82c59x.c
     wd76c10.c
 )

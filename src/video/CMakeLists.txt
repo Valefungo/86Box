@@ -54,12 +54,9 @@ add_library(vid OBJECT
     # CGA / Super CGA
     vid_cga.c
     vid_cga_comp.c
-    vid_cga_compaq.c 
-    vid_cga_compaq_plasma.c
     vid_cga_colorplus.c
-    vid_cga_ncr.c
+    vid_cga_compaq_plasma.c
     vid_cga_olivetti.c
-    vid_cga_quadcolor.c
     vid_cga_toshiba_t1000.c
     vid_cga_toshiba_t3100e.c
     vid_cga_v6355.c
@@ -72,23 +69,13 @@ add_library(vid OBJECT
     # Hercules
     vid_hercules.c
     vid_hercules_plus.c
-    vid_hercules_incolor.c
-
-    # Other early CGA-era cards
-    vid_genius.c
-    vid_sigma.c
-
-    # PGC / IM1024 / WY700 high-resolution
-    vid_pgc.c
-    vid_im1024.c
-    vid_wy700.c
 
     # EGA
     vid_ega.c
     vid_ega_render.c
     vid_jega.c
 
-    # (Real IBM) VGA 
+    # (Real IBM) VGA
     vid_vga.c
 
     # Super VGA core
@@ -102,7 +89,6 @@ add_library(vid OBJECT
 
     # ATI Technologies
     vid_ati_eeprom.c
-    vid_ati18800.c
     vid_ati28800.c
     vid_ati_mach8.c
     vid_ati_mach64.c
@@ -125,16 +111,15 @@ add_library(vid OBJECT
 
     # Paradise
     vid_paradise.c
-    vid_rtg310x.c
     vid_f82c425.c
     vid_ti_cf62011.c
 
     # Trident
-    vid_tvga.c 
+    vid_tvga.c
     vid_tgui9440.c
 
     # S3 Graphics
-    vid_s3.c 
+    vid_s3.c
     vid_s3_virge.c
 
     # Matrox
@@ -142,9 +127,6 @@ add_library(vid OBJECT
 
     # NVidia (pending)
     nv/nv_rivatimer.c
-
-    # Generic
-    vid_bochs_vbe.c
 )
 
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -157,23 +139,4 @@ endif()
 
 if(XL24)
     target_compile_definitions(vid PRIVATE USE_XL24)
-endif()
-
-# 3Dfx Voodoo
-add_library(voodoo OBJECT
-    vid_voodoo.c
-    vid_voodoo_banshee.c
-    vid_voodoo_banshee_blitter.c
-    vid_voodoo_blitter.c
-    vid_voodoo_display.c
-    vid_voodoo_fb.c
-    vid_voodoo_fifo.c
-    vid_voodoo_reg.c
-    vid_voodoo_render.c
-    vid_voodoo_setup.c
-    vid_voodoo_texture.c
-)
-
-if(NOT MSVC AND (ARCH STREQUAL "i386" OR ARCH STREQUAL "x86_64"))
-    target_compile_options(voodoo PRIVATE "-msse2")
 endif()

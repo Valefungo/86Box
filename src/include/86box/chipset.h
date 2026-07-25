@@ -26,15 +26,9 @@ extern const device_t ali1429g_device;
 extern const device_t ali1409_device;
 extern const device_t ali1435_device;
 extern const device_t ali1489_device;
-extern const device_t ali1531_device;
-extern const device_t ali1541_device;
-extern const device_t ali1543_device;
-extern const device_t ali1543c_device;
-extern const device_t ali1621_device;
 extern const device_t ali6117d_device;
 
 /* AMD */
-extern const device_t amd640_device;
 
 /* ASUS */
 extern const device_t isa486c_device;
@@ -100,23 +94,9 @@ extern const device_t i440bx_device;
 extern const device_t i440bx_no_agp_device;
 extern const device_t i440gx_device;
 extern const device_t i440zx_device;
-extern const device_t i450kx_device;
 
 extern const device_t sio_device;
 extern const device_t sio_zb_device;
-
-#define PIIX4_NVR_AMI_1995  0x0000000100000000
-#define PIIX4_NVR_AMI_1995J 0x0000000200000000
-
-extern const device_t piix_device;
-extern const device_t piix_no_mirq_device;
-extern const device_t piix_old_device;
-extern const device_t piix_rev02_device;
-extern const device_t piix3_device;
-extern const device_t piix3_ioapic_device;
-extern const device_t piix4_device;
-extern const device_t piix4e_device;
-extern const device_t slc90e66_device;
 
 extern const device_t ioapic_device;
 
@@ -146,10 +126,6 @@ extern const device_t opti802g_pci_device;
 extern const device_t opti822_device;
 extern const device_t opti895_device;
 
-extern const device_t opti5x7_device;
-extern const device_t opti5x7_pci_device;
-extern const device_t opti55x_device;
-extern const device_t opti55x_noide_device;
 
 /* Philips */
 extern const device_t philips_device;
@@ -165,23 +141,11 @@ extern const device_t sis_85c461_device;
 extern const device_t sis_85c471_device;
 extern const device_t sis_85c496_device;
 extern const device_t sis_85c496_ls486e_device;
-extern const device_t sis_85c50x_device;
-extern const device_t sis_550x_85c503_device;
-extern const device_t sis_85c50x_5503_device;
-extern const device_t sis_550x_device;
-extern const device_t sis_5511_device;
-extern const device_t sis_5571_device;
-extern const device_t sis_5581_device;
-extern const device_t sis_5591_1997_device;
-extern const device_t sis_5591_device;
-extern const device_t sis_5600_1997_device;
-extern const device_t sis_5600_device;
 
 /* ST */
 extern const device_t stpc_client_device;
 extern const device_t stpc_consumer2_device;
 extern const device_t stpc_elite_device;
-extern const device_t stpc_atlas_device;
 extern const device_t stpc_serial_device;
 extern const device_t stpc_lpt_device;
 
@@ -192,7 +156,6 @@ extern const device_t sl82c461_device;
 extern const device_t umc_8886f_device;
 extern const device_t umc_8886af_device;
 extern const device_t umc_8886bf_device;
-extern const device_t umc_8890_device;
 extern const device_t umc_hb4_device;
 
 /* VIA */
@@ -200,30 +163,13 @@ extern const device_t via_vt82c49x_device;
 extern const device_t via_vt82c49x_pci_device;
 extern const device_t via_vt82c49x_pci_ide_device;
 extern const device_t via_vt82c505_device;
-extern const device_t via_vpx_device;
-extern const device_t via_vp3_device;
-extern const device_t via_mvp3_device;
-extern const device_t via_apro_device;
-extern const device_t via_apro133_device;
-extern const device_t via_apro133a_device;
-extern const device_t via_vt8601_device;
 
 #define VIA_PIPC_NO_KBC 0x0000000100000000ULL
 
-extern const device_t via_vt82c586b_device;
-extern const device_t via_vt82c596a_device;
-extern const device_t via_vt82c596b_device;
-extern const device_t via_vt82c686a_device;
-extern const device_t via_vt82c686b_device;
-extern const device_t via_vt8231_device;
 
 /* VLSI */
 extern const device_t vl82c480_device;
 extern const device_t vl82c486_device;
-extern const device_t vl82c59x_device;
-extern const device_t vl82c59x_compaq_device;
-extern const device_t vl82c59x_wildcat_device;
-extern const device_t vl82c59x_wildcat_compaq_device;
 extern const device_t vlsi_scamp_device;
 
 /* WD */

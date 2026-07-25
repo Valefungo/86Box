@@ -1161,9 +1161,6 @@ lpt_port_zero(lpt_t *dev)
     dev->fifo           = temp.fifo;
     dev->fifo_out_timer = temp.fifo_out_timer;
     dev->char_timer     = temp.char_timer;
-
-    if (machine_has_bus(machine, MACHINE_BUS_MCA))
-        dev->ext = 1;
 }
 
 static void
@@ -1208,7 +1205,7 @@ lpt_reset(void *priv)
 
         dev->enable_irq       = 0x00;
         dev->cfg_regs_enabled = 0;
-        dev->ext              = !!(machine_has_bus(machine, MACHINE_BUS_MCA));
+        dev->ext              = 0;
         dev->epp              = 0;
         dev->ecp              = 0;
         dev->ecr              = 0x15;

@@ -31,40 +31,22 @@ add_library(snd OBJECT
     snd_lpt_dss.c
     snd_lpt_tndlpt.c
     snd_pssj.c
-    snd_ac97_codec.c
-    snd_ac97_via.c
     snd_ps1.c
     snd_adlib.c
     snd_adlibgold.c
-    snd_ad1816.c
     snd_ad1848.c
-    snd_audiopci.c
     snd_azt2316a.c
     snd_azt2320.c
     snd_cms.c
-    snd_csm.c
-    snd_cmi8x38.c
-    snd_covox.c
-    snd_cs423x.c
-    snd_imfc.cpp
-    snd_gus.c
     snd_sb.c
     snd_sb_dsp.c
     snd_emu8k.c
-    snd_mmb.c
     snd_mpu401.c
-    snd_pas16.c
-    snd_saaym.c
     snd_sn76489.c
-    snd_ssi2001.c
-    snd_wss.c
     snd_ym7128.c
-    snd_optimc.c
     snd_opl_esfm.c
     snd_ps1_midi.c
     snd_sensation.c
-    snd_ymf701.c
-    snd_ymf71x.c
     sound_util.c
 )
 
@@ -220,37 +202,6 @@ endif()
 
 if(SOFTMODEM)
     target_compile_definitions(snd PRIVATE USE_SOFTMODEM)
-endif()
-
-find_package(PkgConfig)
-if(APPLE)
-    pkg_check_modules(SERIALPORT IMPORTED_TARGET libserialport)
-else()
-    pkg_check_modules(SERIALPORT libserialport)
-endif()
-
-if(SERIALPORT_FOUND OR DEFINED LIBSERIALPORT_ROOT)
-    add_compile_definitions(USE_LIBSERIALPORT=1)
-
-    if(APPLE)
-        if(DEFINED LIBSERIALPORT_ROOT)
-            include_directories(${LIBSERIALPORT_ROOT}/include)
-            target_link_libraries(86Box "${LIBSERIALPORT_ROOT}/lib/libserialport.dylib")
-        else()
-            target_link_libraries(snd PRIVATE PkgConfig::SERIALPORT)
-            target_link_libraries(86Box PkgConfig::SERIALPORT)
-        endif()
-    elseif(WIN32)
-        include_directories(${SERIALPORT_INCLUDE_DIRS})
-        target_link_libraries(86Box ${SERIALPORT_LIBRARIES} SetupAPI)
-    else()
-        include_directories(${SERIALPORT_INCLUDE_DIRS})
-        target_link_libraries(86Box ${SERIALPORT_LIBRARIES})
-    endif()
-    target_sources(snd PRIVATE
-    snd_opl2board.c
-    snd_opl_opl2board.cpp
-)
 endif()
 
 add_subdirectory(resid-fp)

@@ -176,7 +176,6 @@ int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphic
 int      show_second_monitors                   = 1;              /* (C) show non-primary monitors */
 int      sound_is_float                         = 1;              /* (C) sound uses FP values */
 int      sound_sample_rate                      = FREQ_48000;     /* (C) sound output sample rate */
-int      voodoo_enabled                         = 0;              /* (C) video option */
 int      ibm8514_standalone_enabled             = 0;              /* (C) video option */
 int      xga_standalone_enabled                 = 0;              /* (C) video option */
 int      da2_standalone_enabled                 = 0;              /* (C) video option */
@@ -1441,11 +1440,9 @@ pc_init_roms(void)
     }
 
     pc_log("Scanning for ROM images:\n");
-    c = m = 0;
-    while (machine_get_internal_name_ex(m) != NULL) {
+    c = 0;
+    for (m = 0; m <= machine_count(); m++)
         c += machine_available(m);
-        m++;
-    }
     if (c == 0) {
         /* No usable ROMs found, aborting. */
         return 0;
@@ -1837,10 +1834,6 @@ pc_reset_hard_init(void)
 
     /* Reset any ISA RTC cards. */
     isartc_reset();
-
-    /* Initialize the Voodoo cards here inorder to minimize
-       the chances of the SCSI controller ending up on the bridge. */
-    video_voodoo_init();
 
 #if defined(USE_VFIO) && defined(__linux__)
     /* Initialize VFIO */

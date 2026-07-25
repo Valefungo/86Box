@@ -4352,41 +4352,6 @@ static const device_config_t isa_ext8514_config[] = {
 };
 
 // clang-format off
-static const device_config_t mca_ext8514_config[] = {
-    {
-        .name           = "memory",
-        .description    = "Memory size",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 1024,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "512 KB", .value =  512 },
-            { .description = "1 MB",   .value = 1024 },
-            { .description = ""                      }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "extensions",
-        .description    = "Vendor",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = IBM,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "IBM", .value = IBM },
-            { .description = "ATI", .value = ATI },
-            { .description = ""                }
-        },
-        .bios           = { { 0 } }
-    },
-    { .name = "", .description = "", .type = CONFIG_END }
-};
-
-// clang-format off
 const device_t gen8514_isa_device = {
     .name          = "IBM 8514/A clone (ISA)",
     .internal_name = "8514_isa",
@@ -4401,28 +4366,11 @@ const device_t gen8514_isa_device = {
     .config        = isa_ext8514_config
 };
 
-const device_t ibm8514_mca_device = {
-    .name          = "IBM 8514/A (MCA)",
-    .internal_name = "8514_mca",
-    .flags         = DEVICE_MCA,
-    .local         = IBM_8514A_TYPE,
-    .init          = ibm8514_init,
-    .close         = ibm8514_close,
-    .reset         = NULL,
-    .available     = NULL,
-    .speed_changed = ibm8514_speed_changed,
-    .force_redraw  = ibm8514_force_redraw,
-    .config        = mca_ext8514_config
-};
-
 void
 ibm8514_device_add(void)
 {
     if (!ibm8514_standalone_enabled)
         return;
 
-    if (machine_has_bus(machine, MACHINE_BUS_MCA))
-        device_add(&ibm8514_mca_device);
-    else
-        device_add(&gen8514_isa_device);
+    device_add(&gen8514_isa_device);
 }

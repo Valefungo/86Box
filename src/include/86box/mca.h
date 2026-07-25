@@ -123,6 +123,5 @@ extern void mca_reset(void);
 /**
  * @brief Internal PS/2 cache maintenance hook.
  */
-extern void ps2_cache_clean(void);
 
 #endif /*EMU_MCA_H*/

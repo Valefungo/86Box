@@ -169,35 +169,17 @@ extern void sb_vibra16s_onboard_relocate_base(uint16_t new_addr, void *priv);
 #ifdef EMU_DEVICE_H
 /* AdLib and AdLib Gold */
 extern const device_t adlib_device;
-extern const device_t adlib_mca_device;
 extern const device_t adgold_device;
 
 /* Analog Devices AD1816 */
-extern const device_t ad1816_device;
 
 /* Aztech Sound Galaxy 16 */
-extern const device_t azt2316a_device;
-extern const device_t azt1605_device;
-extern const device_t aztpr16_device;
-extern const device_t azt2316r_device;
-extern const device_t azt2320_device;
 
 /* C-Media CMI8x38 */
-extern const device_t cmi8338_device;
-extern const device_t cmi8338_onboard_device;
-extern const device_t cmi8738_device;
-extern const device_t cmi8738_onboard_device;
-extern const device_t cmi8738_6ch_onboard_device;
 
 /* Covox ISA */
-extern const device_t voicemasterkey_device;
-extern const device_t soundmaster_device;
-extern const device_t soundmasterplus_device;
-extern const device_t isadacr0_device;
-extern const device_t isadacr1_device;
 
 /* Creative Labs Game Blaster */
-extern const device_t cms_device;
 
 /* Creative Labs Sound Blaster */
 extern const device_t sb_1_device;
@@ -233,15 +215,6 @@ extern const device_t sb_awe64_ide_device;
 extern const device_t sb_awe64_gold_device;
 
 /* Crystal CS423x */
-extern const device_t cs4232_device;
-extern const device_t cs4232_onboard_device;
-extern const device_t cs4235_device;
-extern const device_t cs4235_onboard_device;
-extern const device_t cs4236_onboard_device;
-extern const device_t cs4236b_device;
-extern const device_t cs4236b_onboard_device;
-extern const device_t cs4237b_device;
-extern const device_t cs4238b_device;
 
 /* ESS Technology */
 extern const device_t ess_688_device;
@@ -262,53 +235,29 @@ extern const device_t ess_1868_device;
 extern const device_t ess_1869_device;
 
 /* Ensoniq AudioPCI */
-extern const device_t es1370_device;
-extern const device_t es1371_device;
-extern const device_t es1371_onboard_device;
-extern const device_t es1373_device;
-extern const device_t es1373_onboard_device;
-extern const device_t ct5880_device;
-extern const device_t ct5880_onboard_device;
 
 /* Gravis UltraSound family */
-extern const device_t gus_device;
-extern const device_t gus_v37_device;
-extern const device_t gus_max_device;
-extern const device_t gus_ace_device;
 
 /* IBM Music Feature Card */
-extern const device_t imfc_device;
 
 /* IBM PS/1 Audio Card */
 extern const device_t ps1snd_device;
 
 /* Innovation SSI-2001 */
-extern const device_t ssi2001_device;
-extern const device_t entertainer_device;
 
 /* Mindscape Music Board */
-extern const device_t mmb_device;
 
 /* MediaVision ThunderBoard */
 extern const device_t thunderboard_device;
 
 /* OPTi 82c93x */
-extern const device_t acermagic_s20_device;
-extern const device_t mirosound_pcm10_device;
-extern const device_t opti_82c930_device;
-extern const device_t opti_82c931_device;
 
 /* PC Speaker */
 extern const device_t speaker_device;
 
 /* Pro Audio Spectrum, Plus, 16, and 16D */
-extern const device_t pas_device;
-extern const device_t pasplus_device;
-extern const device_t pas16_device;
-extern const device_t pas16d_device;
 
 /* Rainbow Arts PC-Soundman */
-extern const device_t soundman_device;
 
 /* Tandy PSSJ */
 extern const device_t pssj_device;
@@ -322,21 +271,13 @@ extern const device_t tndy_device;
 extern const device_t sensationaud_device;
 
 /* TexElec SAAYM */
-extern const device_t saaym_device;
 
 /* Windows Sound System */
-extern const device_t wss_device;
-extern const device_t ncr_business_audio_device;
 
 /* Yamaha YMF-7xx */
-extern const device_t ymf701_device;
-extern const device_t ymf715_onboard_device;
-extern const device_t ymf718_device;
-extern const device_t ymf719_device;
 
 #ifdef USE_LIBSERIALPORT
 /* External Audio device OPL2Board (Host Connected hardware)*/
-extern const device_t opl2board_device;
 #endif 
 
 #endif

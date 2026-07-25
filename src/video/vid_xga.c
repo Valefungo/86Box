@@ -3874,12 +3874,6 @@ xga_close(void *priv)
 }
 
 static int
-xga_available(void)
-{
-    return rom_present(XGA_BIOS_PATH) && rom_present(XGA2_BIOS_PATH);
-}
-
-static int
 inmos_xga_available(void)
 {
     return rom_present(INMOS_XGA_BIOS_PATH);
@@ -3900,27 +3894,6 @@ xga_force_redraw(void *priv)
 
     svga->fullchange = svga->monitor->mon_changeframecount;
 }
-
-static const device_config_t xga_mca_configuration[] = {
-  // clang-format off
-    {
-        .name           = "type",
-        .description    = "XGA type",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 0,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "XGA-1", .value = 0 },
-            { .description = "XGA-2", .value = 1 },
-            { .description = ""                  }
-        },
-        .bios           = { { 0 } }
-    },
-    { .name = "", .description = "", .type = CONFIG_END }
-  // clang-format on
-};
 
 static const device_config_t xga_inmos_isa_configuration[] = {
   // clang-format off
@@ -3959,20 +3932,6 @@ static const device_config_t xga_inmos_isa_configuration[] = {
   // clang-format on
 };
 
-const device_t xga_device = {
-    .name          = "XGA (MCA)",
-    .internal_name = "xga_mca",
-    .flags         = DEVICE_MCA,
-    .local         = 0,
-    .init          = xga_init,
-    .close         = xga_close,
-    .reset         = xga_reset,
-    .available     = xga_available,
-    .speed_changed = xga_speed_changed,
-    .force_redraw  = xga_force_redraw,
-    .config        = xga_mca_configuration
-};
-
 const device_t inmos_isa_device = {
     .name          = "INMOS XGA (ISA)",
     .internal_name = "inmos_xga_isa",
@@ -3992,7 +3951,4 @@ xga_device_add(void)
 {
     if (!xga_standalone_enabled)
         return;
-
-    if (machine_has_bus(machine, MACHINE_BUS_MCA))
-        device_add(&xga_device);
 }

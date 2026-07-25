@@ -17,7 +17,6 @@
 #define VIDEO_8514A_DEVICE_H
 
 #ifdef EMU_DEVICE_H
-extern const device_t ibm8514_mca_device;
 extern const device_t gen8514_isa_device;
 #endif
 #endif /*VIDEO_XGA_DEVICE_H*/

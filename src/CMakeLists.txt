@@ -44,7 +44,6 @@ add_executable(86Box
     ppi.c
     pci.c
     mca.c
-    usb.c
     device.c
     nvr.c
     nvr_at.c
@@ -77,32 +76,12 @@ if(DYNAREC)
     add_compile_definitions(USE_DYNAREC)
 endif()
 
-if(DISCORD)
-    add_compile_definitions(DISCORD)
-    target_sources(86Box PRIVATE discord.c)
-endif()
-
 if(DEBUGREGS486)
     add_compile_definitions(USE_DEBUG_REGS_486)
 endif()
 
 if(SCREENSHOT_MODE)
     add_compile_definitions(SCREENSHOT_MODE)
-endif()
-
-if(VNC)
-    find_package(LibVNCServer)
-    if(LibVNCServer_FOUND)
-        add_compile_definitions(USE_VNC)
-        add_library(vnc OBJECT
-            vnc.c
-            vnc_keymap.c
-        )
-        target_link_libraries(86Box vnc LibVNCServer::vncserver)
-        if(WIN32)
-            target_link_libraries(86Box ws2_32)
-        endif()
-    endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "Linux")
@@ -140,7 +119,6 @@ target_link_libraries(86Box
     mdsx_dll
     utils
     vid
-    voodoo
     plat
     ui
 )
@@ -164,17 +142,7 @@ if(APPLE)
     # Force using the newest library if it's installed by homebrew
     set(CMAKE_FIND_FRAMEWORK LAST)
 
-    # setting our compilation target to macOS 10.15 Catalina if targeting Qt6,
-    # macOS 10.14 Mojave for vulkan support, 10.13 High Sierra otherwise
-    if (USE_QT6)
-        set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
-    else()
-        if(MOLTENVK)
-            set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14")
-        else()
-            set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
-        endif()
-    endif()
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
 endif()
 
 find_package(Freetype REQUIRED)
@@ -243,7 +211,7 @@ if(WIN32)
         get_filename_component(CMAKE_INSTALL_PREFIX_ABSOLUTE \${CMAKE_INSTALL_PREFIX} ABSOLUTE)
         fixup_bundle(\"\${CMAKE_INSTALL_PREFIX_ABSOLUTE}/$<TARGET_FILE_NAME:86Box>\" \"\" \"\")"
     COMPONENT Runtime)
-elseif(APPLE AND NOT QT)
+elseif(APPLE)
     install(CODE "
         include(BundleUtilities)
         get_filename_component(CMAKE_INSTALL_PREFIX_ABSOLUTE \${CMAKE_INSTALL_PREFIX} ABSOLUTE)
@@ -289,12 +257,8 @@ endif()
 
 add_subdirectory(osd)
 
-if (QT)
-    add_subdirectory(qt)
-else()
-    add_compile_definitions(USE_SDL_UI)
-    add_subdirectory(unix)
-endif()
+add_compile_definitions(USE_SDL_UI)
+add_subdirectory(unix)
 
 if(CMAKE_SYSTEM_NAME MATCHES "NetBSD")
     add_custom_command(TARGET 86Box POST_BUILD COMMAND paxctl ARGS +m $<TARGET_FILE:86Box> COMMENT "Disable PaX MPROTECT")

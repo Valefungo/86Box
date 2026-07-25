@@ -1218,11 +1218,8 @@ acpi_reg_write_intel(int size, uint16_t addr, uint8_t val, void *priv)
         case 0x36:
         case 0x37:
             /* GPOREG - General Purpose Output Register (IO) */
-            if (size == 1) {
+            if (size == 1)
                 dev->regs.gporeg[addr & 3] = val;
-                if ((addr == 0x34) && (machines[machine].init == machine_at_cubx_init))
-                    hdc_onboard_enabled = (val & 0x01);
-            }
             break;
         default:
             acpi_reg_write_common_regs(size, addr, val, priv);
@@ -1747,9 +1744,6 @@ acpi_reg_write_sis_5595(int size, uint16_t addr, uint8_t val, void *priv)
             break;
         case 0x1c:
             dev->regs.gpe_pin = ((dev->regs.gpe_pin & ~(0xff << shift32)) | ((val & 0xff) << shift32));
-            if ((machines[machine].init == machine_at_m747_init) && (val & 0x10) &&
-                !(dev->regs.gpe_io & 0x00000010))
-                resetx86();
             break;
         case 0x1d:
             dev->regs.gpe_pin = ((dev->regs.gpe_pin & ~(0x0f << shift32)) | ((val & 0x0f) << shift32));
@@ -2401,7 +2395,7 @@ acpi_reset(void *priv)
     /* PC Chips M773:
        - Bit 3: 80-conductor cable on unknown IDE channel (active low)
        - Bit 1: 80-conductor cable on unknown IDE channel (active low) */
-    dev->regs.gpireg[0] = (machines[machine].init == machine_at_m773_init) ? 0xf5 : 0xff;
+    dev->regs.gpireg[0] = 0xff;
     dev->regs.gpireg[1] = 0xff;
     /* A-Trend ATC7020BXII:
        - Bit 3: 80-conductor cable on secondary IDE channel (active low)
@@ -2435,18 +2429,6 @@ acpi_reset(void *priv)
                - Bit 19: password cleared (active low).
          */
         dev->regs.gpi_val = 0xfff57fc1;
-        if ((machines[machine].init == machine_at_ficva503a_init) || (machines[machine].init == machine_at_6via90ap_init))
-            dev->regs.gpi_val |= 0x00000004;
-        else if ((machines[machine].init == machine_at_ficka6130_init))
-            dev->regs.gpi_val |= 0x00080000;
-         /*
-            TriGem Delhi-III second GPI word:
-                - Bit 7 = Save CMOS (must be set);
-                - Bit 6 = Password jumper (must be set);
-                - Bit 5 = Enable Setup (must be set).
-         */
-        else if (machines[machine].init == machine_at_delhi3_init)
-            dev->regs.gpi_val |= 0x00008000;
     }
 
     if (acpi_power_on) {
@@ -2454,10 +2436,6 @@ acpi_reset(void *priv)
         dev->regs.pmsts |= 0x8100;
         acpi_power_on = 0;
     }
-
-    /* The Gateway Tomahawk requires the LID polarity bit to be set. */
-    if (machines[machine].init == machine_at_tomahawk_init)
-        dev->regs.glbctl |= 0x02000000;
 
     acpi_rtc_status = 0;
 

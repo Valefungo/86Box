@@ -1547,8 +1547,6 @@ i4x0_read(int func, int addr, UNUSED(int len), void *priv)
            with the addition of bits 3 and 0. */
         if ((func == 0) && (addr == 0x93) && ((dev->type == INTEL_440FX) || (dev->type == INTEL_440LX) || (dev->type == INTEL_440EX)))
             ret = (ret & 0xf9) | (pci_read(0x0cf9, NULL) & 0x06);
-        else if ((func == 0) && (addr == 0x52) && (dev->type == INTEL_430TX) && (machines[machine].init == machine_at_tomahawk_init))
-            ret = 0xb2;
     }
 
     return ret;

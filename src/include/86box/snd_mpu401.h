@@ -184,7 +184,6 @@ extern int mpu401_standalone_enable;
 extern int mpu401_already_loaded;
 
 extern const device_t mpu401_device;
-extern const device_t mpu401_mca_device;
 
 extern uint8_t MPU401_ReadData(mpu_t *mpu);
 extern void    mpu401_write(uint16_t addr, uint8_t val, void *priv);

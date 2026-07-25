@@ -2543,7 +2543,6 @@ dma_ps2_run(int channel)
                 dma_c->cc--;
             } while (dma_c->cc > 0);
 
-            ps2_cache_clean();
             dma_stat |= (1 << channel);
             break;
 

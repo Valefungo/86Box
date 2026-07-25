@@ -30,7 +30,6 @@
 #include <86box/device.h>
 #include <86box/plat_unused.h>
 #include <86box/port_92.h>
-#include <86box/usb.h>
 #include <86box/hdc_ide.h>
 #include <86box/hdc_ide_sff8038i.h>
 #include <86box/serial.h>
@@ -39,15 +38,12 @@
 #include "cpu.h"
 
 #define STPC_CONSUMER2 0x104a020b
-#define STPC_ATLAS     0x104a0210
 #define STPC_ELITE     0x104a021a
 #define STPC_CLIENT    0x100e55cc
 
 typedef struct stpc_t {
     uint8_t nb_slot;
     uint8_t sb_slot;
-    uint8_t ide_slot;
-    uint8_t usb_slot;
 
     uint32_t local;
 
@@ -70,7 +66,6 @@ typedef struct stpc_t {
     /* PCI devices */
     uint8_t     pci_conf[4][256];
     smram_t    *smram;
-    usb_t      *usb;
     sff8038i_t *bm[2];
 } stpc_t;
 
@@ -471,7 +466,7 @@ stpc_isab_write(int func, int addr, int len, uint8_t val, void *priv)
 {
     stpc_t *dev = (stpc_t *) priv;
 
-    if ((func == 1) && (dev->local != STPC_ATLAS)) {
+    if (func == 1) {
         stpc_ide_write(0, addr, len, val, priv);
         return;
     }
@@ -513,7 +508,7 @@ stpc_isab_read(int func, int addr, int len, void *priv)
     const stpc_t *dev = (stpc_t *) priv;
     uint8_t       ret;
 
-    if ((func == 1) && (dev->local != STPC_ATLAS))
+    if (func == 1)
         ret = stpc_ide_read(0, addr, len, priv);
     else if (func > 0)
         ret = 0xff;
@@ -521,68 +516,6 @@ stpc_isab_read(int func, int addr, int len, void *priv)
         ret = dev->pci_conf[1][addr];
 
     stpc_log("STPC: isab_read(%d, %02X) = %02X\n", func, addr, ret);
-    return ret;
-}
-
-static void
-stpc_usb_write(int func, int addr, UNUSED(int len), uint8_t val, void *priv)
-{
-    stpc_t *dev = (stpc_t *) priv;
-
-    stpc_log("STPC: usb_write(%d, %02X, %02X)\n", func, addr, val);
-
-    if (func > 0)
-        return;
-
-    switch (addr) {
-        case 0x00:
-        case 0x01:
-        case 0x02:
-        case 0x03:
-        case 0x04:
-        case 0x06:
-        case 0x07:
-        case 0x08:
-        case 0x09:
-        case 0x0a:
-        case 0x0b:
-        case 0x0e:
-        case 0x10:
-            return;
-
-        case 0x05:
-            val &= 0x01;
-            break;
-
-        case 0x11:
-            dev->pci_conf[3][addr] = val & 0xf0;
-            ohci_update_mem_mapping(dev->usb, dev->pci_conf[3][0x11], dev->pci_conf[3][0x12], dev->pci_conf[3][0x13], 1);
-            break;
-
-        case 0x12:
-        case 0x13:
-            dev->pci_conf[3][addr] = val;
-            ohci_update_mem_mapping(dev->usb, dev->pci_conf[3][0x11], dev->pci_conf[3][0x12], dev->pci_conf[3][0x13], 1);
-            break;
-        default:
-            break;
-    }
-
-    dev->pci_conf[3][addr] = val;
-}
-
-static uint8_t
-stpc_usb_read(int func, int addr, UNUSED(int len), void *priv)
-{
-    const stpc_t *dev = (stpc_t *) priv;
-    uint8_t       ret;
-
-    if (func > 0)
-        ret = 0xff;
-    else
-        ret = dev->pci_conf[3][addr];
-
-    stpc_log("STPC: usb_read(%d, %02X) = %02X\n", func, addr, ret);
     return ret;
 }
 
@@ -846,13 +779,8 @@ stpc_setup(stpc_t *dev)
     dev->pci_conf[2][0x00] = dev->local >> 16;
     dev->pci_conf[2][0x01] = dev->local >> 24;
 
-    if (dev->local == STPC_ATLAS) {
-        dev->pci_conf[2][0x02] = 0x28;
-        dev->pci_conf[2][0x03] = 0x02;
-    } else {
-        dev->pci_conf[2][0x02] = dev->pci_conf[1][0x02];
-        dev->pci_conf[2][0x03] = dev->pci_conf[1][0x03];
-    }
+    dev->pci_conf[2][0x02] = dev->pci_conf[1][0x02];
+    dev->pci_conf[2][0x03] = dev->pci_conf[1][0x03];
 
     dev->pci_conf[2][0x06] = 0x80;
     dev->pci_conf[2][0x07] = 0x02;
@@ -880,26 +808,6 @@ stpc_setup(stpc_t *dev)
     dev->pci_conf[2][0x45] = 0x97;
     dev->pci_conf[2][0x46] = 0x60;
     dev->pci_conf[2][0x47] = 0x97;
-
-    /* USB */
-    if (dev->usb) {
-        dev->pci_conf[3][0x00] = dev->local >> 16;
-        dev->pci_conf[3][0x01] = dev->local >> 24;
-        dev->pci_conf[3][0x02] = 0x30;
-        dev->pci_conf[3][0x03] = 0x02;
-
-        dev->pci_conf[3][0x06] = 0x80;
-        dev->pci_conf[3][0x07] = 0x02;
-
-        dev->pci_conf[3][0x09] = 0x10;
-        dev->pci_conf[3][0x0a] = 0x03;
-        dev->pci_conf[3][0x0b] = 0x0c;
-
-        /* NOTE: This is an erratum in the STPC Atlas programming manual, the programming manuals for the other
-                 STPC chipsets say 0x80, which is indeed multi-function (as the STPC Atlas programming manual
-                 indicates as well), and Windows 2000 also issues a 0x7B STOP error if it is 0x40. */
-        dev->pci_conf[3][0x0e] = /*0x40*/ 0x80;
-    }
 
     /* PCI setup */
     pci_set_irq_routing(PCI_INTA, PCI_IRQ_DISABLED);
@@ -931,12 +839,6 @@ stpc_init(const device_t *info)
 
     pci_add_card(PCI_ADD_NORTHBRIDGE, stpc_nb_read, stpc_nb_write, dev, &dev->nb_slot);
     pci_add_card(PCI_ADD_SOUTHBRIDGE, stpc_isab_read, stpc_isab_write, dev, &dev->sb_slot);
-    if (dev->local == STPC_ATLAS) {
-        pci_add_card(PCI_ADD_SOUTHBRIDGE_IDE, stpc_ide_read, stpc_ide_write, dev, &dev->ide_slot);
-
-        dev->usb = device_add(&usb_device);
-        pci_add_card(PCI_ADD_SOUTHBRIDGE_USB, stpc_usb_read, stpc_usb_write, dev, &dev->usb_slot);
-    }
 
     dev->bm[0] = device_add_inst(&sff8038i_device, 1);
     dev->bm[1] = device_add_inst(&sff8038i_device, 2);
@@ -1120,20 +1022,6 @@ const device_t stpc_elite_device = {
     .internal_name = "stpc_elite",
     .flags         = DEVICE_PCI,
     .local         = STPC_ELITE,
-    .init          = stpc_init,
-    .close         = stpc_close,
-    .reset         = stpc_reset,
-    .available     = NULL,
-    .speed_changed = NULL,
-    .force_redraw  = NULL,
-    .config        = NULL
-};
-
-const device_t stpc_atlas_device = {
-    .name          = "STPC Atlas",
-    .internal_name = "stpc_atlas",
-    .flags         = DEVICE_PCI,
-    .local         = STPC_ATLAS,
     .init          = stpc_init,
     .close         = stpc_close,
     .reset         = stpc_reset,

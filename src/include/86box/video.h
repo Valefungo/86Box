@@ -312,7 +312,6 @@ extern void    video_reset_close(void);
 extern void    video_pre_reset(int card);
 extern void    video_reset(int card);
 extern void    video_post_reset(void);
-extern void    video_voodoo_init(void);
 extern uint8_t video_force_resize_get_monitor(int monitor_index);
 extern void    video_force_resize_set_monitor(uint8_t res, int monitor_index);
 extern void    video_update_timing(void);
@@ -366,26 +365,14 @@ extern const device_t mach64vt2_device;
 extern const device_t mach64vt3_onboard_device;
 
 /* ATi 18800 */
-extern const device_t ati18800_wonder_device;
-extern const device_t ati18800_vga88_device;
-extern const device_t ati18800_device;
 
 /* ATi 28800 */
-extern const device_t ati28800_5_device;
-extern const device_t ati28800_wonder1024d_xl_plus_device;
-extern const device_t ati28800k_device;
-extern const device_t ati28800k_spc4620p_device;
-extern const device_t ati28800k_spc6033p_device;
 #    ifdef USE_XL24
-extern const device_t ati28800_wonderxl24_device;
 #    endif /* USE_XL24 */
 
 /* Bochs */
-extern const device_t bochs_svga_device;
 
 /* Chips & Technologies */
-extern const device_t chips_69000_device;
-extern const device_t chips_69000_onboard_device;
 
 /* Cirrus Logic GD54xx */
 extern const device_t gd5401_isa_device;
@@ -436,19 +423,14 @@ extern const device_t cga_device;
 extern const device_t cga_pravetz_device;
 
 /* Compaq CGA */
-extern const device_t compaq_cga_device;
-extern const device_t compaq_cga_2_device;
 extern const device_t compaq_plasma_device;
 
 /* Olivetti OGC */
-extern const device_t ogc_device;
-extern const device_t ogc_m24_device;
 
 /* Chips & Technologies 82C425 */
 extern const device_t f82c425_video_device;
 
 /* NCR NGA */
-extern const device_t nga_device;
 
 /* Tseng ET3000AX */
 extern const device_t et3000_isa_device;
@@ -467,24 +449,14 @@ extern const device_t et4000w32p_vlb_device;
 extern const device_t et4000w32p_pci_device;
 
 /* MDSI Genius VHR */
-extern const device_t genius_device;
 
 /* Hercules */
 extern const device_t hercules_device;
 extern const device_t herculesplus_device;
-extern const device_t incolor_device;
 
 /* Headland GC-2xx/HT-2xx */
-extern const device_t g2_gc205_device;
-extern const device_t v7_vga_1024i_device;
-extern const device_t radius_svga_multiview_isa_device;
-extern const device_t radius_svga_multiview_mca_device;
-extern const device_t ht216_32_pb410a_device;
-extern const device_t ht216_32_standalone_device;
 
 /* Professional Graphics Controller */
-extern const device_t im1024_device;
-extern const device_t pgc_device;
 
 /* Matrox MGA */
 extern const device_t millennium_device;
@@ -497,7 +469,6 @@ extern const device_t productiva_g100_device;
 #endif /* USE_G100 */
 
 /* JEGA */
-extern const device_t if386jega_device;
 
 /* Oak OTI-0x7 */
 extern const device_t oti037c_device;
@@ -511,30 +482,83 @@ extern const device_t oti077_pcs44c_device;
 extern const device_t oti077_device;
 
 /* Paradise/WD (S)VGA */
-extern const device_t paradise_pvga1a_ncr3302_device;
+
+/* Quadram Quadcolor I / I + II */
+
+/* Realtek (S)VGA */
+
+/* S3 9XX/8XX/Vision/Trio */
+/* On-board */
+/* External */
+
+/* S3 ViRGE */
+
+/* Sigma Color 400 */
+
+/* Trident TGUI 94x0 */
+
+/* IBM PS/1 (S)VGA */
+extern const device_t ibm_ps1_2121_device;
+
+/* Trident TVGA 8900 */
+
+/* IBM VGA */
+extern const device_t vga_device;
+extern const device_t ps1vga_device;
+extern const device_t ps1vga_mca_device;
+
+
+/* Yamaha V6355 */
+extern const device_t v6355d_device;
+
+/* Tandy */
+extern const device_t tandy_1000_video_device;
+extern const device_t tandy_1000hx_video_device;
+extern const device_t tandy_1000sl_video_device;
+
+/* vid_cga_colorplus.c */
+extern const device_t colorplus_device;
+/* vid_mda.c */
+extern const device_t mda_device;
+/* vid_ati28800.c */
+extern const device_t ati28800_5_device;
+extern const device_t ati28800k_device;
+extern const device_t ati28800k_spc4620p_device;
+extern const device_t ati28800k_spc6033p_device;
+extern const device_t ati28800_wonder1024d_xl_plus_device;
+extern const device_t ati28800_wonderxl24_device;
+/* vid_cga_olivetti.c */
+extern const device_t ogc_m24_device;
+extern const device_t ogc_device;
+/* vid_chips_69000.c */
+extern const device_t chips_69000_device;
+extern const device_t chips_69000_onboard_device;
+/* vid_ht216.c */
+extern const device_t g2_gc205_device;
+extern const device_t v7_vga_1024i_device;
+extern const device_t ht216_32_pb410a_device;
+extern const device_t ht216_32_standalone_device;
+extern const device_t radius_svga_multiview_isa_device;
+extern const device_t radius_svga_multiview_mca_device;
+/* vid_jega.c */
+extern const device_t jega_device;
+extern const device_t jvga_device;
+extern const device_t if386jega_device;
+/* vid_paradise.c */
 extern const device_t paradise_pvga1a_pc2086_device;
 extern const device_t paradise_pvga1a_pc3086_device;
+extern const device_t paradise_pvga1a_ncr3302_device;
 extern const device_t paradise_pvga1a_device;
 extern const device_t paradise_wd90c11_megapc_device;
 extern const device_t paradise_wd90c11_device;
 extern const device_t paradise_wd90c30_device;
-
-/* Quadram Quadcolor I / I + II */
-extern const device_t quadcolor_device;
-
-/* Realtek (S)VGA */
-extern const device_t realtek_rtg3105_device;
-extern const device_t realtek_rtg3106_device;
-
-/* S3 9XX/8XX/Vision/Trio */
-/* On-board */
+/* vid_s3.c */
 extern const device_t s3_86c805_onboard_vlb_device;
 extern const device_t s3_trio32_onboard_vlb_device;
 extern const device_t s3_trio32_onboard_pci_device;
 extern const device_t s3_trio64_onboard_pci_device;
 extern const device_t s3_trio64vplus_onboard_pci_device;
 extern const device_t s3_trio64v2dx_onboard_pci_device;
-/* External */
 extern const device_t s3_86c911_isa_device;
 extern const device_t s3_86c924_isa_device;
 extern const device_t s3_86c928_isa_device;
@@ -557,8 +581,7 @@ extern const device_t s3_vision968_pci_device;
 extern const device_t s3_trio64vplus_vlb_device;
 extern const device_t s3_trio64vplus_pci_device;
 extern const device_t s3_trio64v2dx_pci_device;
-
-/* S3 ViRGE */
+/* vid_s3_virge.c */
 extern const device_t s3_virge_pci_device;
 extern const device_t s3_virge_325_onboard_pci_device;
 extern const device_t s3_virge_vx_pci_device;
@@ -569,11 +592,7 @@ extern const device_t s3_virge_gx2_pci_device;
 extern const device_t s3_virge_gx2_agp_device;
 extern const device_t s3_trio3d2x_pci_device;
 extern const device_t s3_trio3d2x_agp_device;
-
-/* Sigma Color 400 */
-extern const device_t sigma_device;
-
-/* Trident TGUI 94x0 */
+/* vid_tgui9440.c */
 extern const device_t tgui9400cxi_device;
 extern const device_t tgui9440_vlb_device;
 extern const device_t tgui9440_pci_device;
@@ -581,45 +600,10 @@ extern const device_t tgui9440_onboard_pci_device;
 extern const device_t tgui9660_pci_device;
 extern const device_t tgui9660_onboard_pci_device;
 extern const device_t tgui9680_pci_device;
-
-/* IBM PS/1 (S)VGA */
-extern const device_t ibm_ps1_2121_device;
-
-/* Trident TVGA 8900 */
+/* vid_tvga.c */
 extern const device_t tvga8900_device;
 extern const device_t tvga8900d_onboard_device;
 extern const device_t tvga9000b_device;
-
-/* IBM VGA */
-extern const device_t vga_device;
-extern const device_t ps1vga_device;
-extern const device_t ps1vga_mca_device;
-
-/* 3DFX Voodoo Graphics */
-extern const device_t voodoo_device;
-extern const device_t voodoo_banshee_pci_device;
-extern const device_t voodoo_banshee_agp_device;
-extern const device_t voodoo_3_1000_device;
-extern const device_t voodoo_3_1000_agp_device;
-extern const device_t voodoo_3_2000_device;
-extern const device_t voodoo_3_2000_agp_device;
-extern const device_t voodoo_3_2000_agp_onboard_8m_device;
-extern const device_t voodoo_3_3000_device;
-extern const device_t voodoo_3_3000_agp_device;
-extern const device_t voodoo_3_3500_agp_device;
-extern const device_t velocity_100_agp_device;
-extern const device_t velocity_200_agp_device;
-
-/* Wyse 700 */
-extern const device_t wy700_device;
-
-/* Yamaha V6355 */
-extern const device_t v6355d_device;
-
-/* Tandy */
-extern const device_t tandy_1000_video_device;
-extern const device_t tandy_1000hx_video_device;
-extern const device_t tandy_1000sl_video_device;
 
 #endif
 

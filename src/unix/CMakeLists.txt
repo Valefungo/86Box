@@ -21,13 +21,13 @@
 add_library(plat OBJECT
     sdl_main.c
     sdl_plat.c
-    ../qt/sdl_joystick.c
+    sdl_joystick.c
 )
 
 if(WIN32)
     target_sources(plat PRIVATE
-        ../qt/win_netsocket.c
-        ../qt/win_dynld.c
+        win_netsocket.c
+        win_dynld.c
         sdl_plat_win.c
     )
     target_link_libraries(86Box ws2_32)
@@ -41,7 +41,7 @@ endif()
 
 if (NOT CPPTHREADS)
     if(WIN32)
-        target_sources(plat PRIVATE ../qt/win_thread.c)
+        target_sources(plat PRIVATE win_thread.c)
     else()
         set(THREADS_PREFER_PTHREAD_FLAG TRUE)
         find_package(Threads REQUIRED)
@@ -113,7 +113,7 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR CMAKE_SYSTEM_NAME STREQUAL "Darwi
     target_sources(plat PRIVATE dummy_cdrom_ioctl.c)
     target_sources(plat PRIVATE unix_floppy_ioctl.c)
 elseif(WIN32)
-    target_sources(plat PRIVATE ../qt/win_cdrom_ioctl.c)
+    target_sources(plat PRIVATE win_cdrom_ioctl.c)
     target_sources(plat PRIVATE dummy_floppy_ioctl.c)
 else()
     target_sources(plat PRIVATE dummy_cdrom_ioctl.c)

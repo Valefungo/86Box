@@ -28,8 +28,6 @@
 #include <86box/86box.h>
 #include <86box/device.h>
 #include <86box/io.h>
-#include <86box/machine.h>
-#include <86box/mca.h>
 #include <86box/midi.h>
 #include <86box/pic.h>
 #include <86box/plat.h>
@@ -1714,50 +1712,7 @@ mpu401_device_add(void)
     if (!mpu401_standalone_enable)
         return;
 
-    if (machine_has_bus(machine, MACHINE_BUS_MCA))
-        device_add(&mpu401_mca_device);
-    else
-        device_add(&mpu401_device);
-}
-
-static uint8_t
-mpu401_mca_read(const uint16_t port, void *priv)
-{
-    const mpu_t *mpu = (mpu_t *) priv;
-
-    return mpu->pos_regs[port & 7];
-}
-
-static void
-mpu401_mca_write(uint16_t port, uint8_t val, void *priv)
-{
-    mpu_t   *mpu = (mpu_t *) priv;
-    uint16_t addr;
-
-    if (port < 0x102)
-        return;
-
-    addr = (mpu->pos_regs[2] & 2) ? 0x0330 : 0x1330;
-
-    port &= 7;
-
-    mpu->pos_regs[port] = val;
-
-    if (port == 2) {
-        io_removehandler(addr, 2,
-                         mpu401_read, NULL, NULL, mpu401_write, NULL, NULL, mpu);
-
-        addr = (mpu->pos_regs[2] & 2) ? 0x1330 : 0x0330;
-
-        io_sethandler(addr, 2,
-                      mpu401_read, NULL, NULL, mpu401_write, NULL, NULL, mpu);
-    }
-}
-
-static uint8_t
-mpu401_mca_feedb(UNUSED(void *priv))
-{
-    return 1;
+    device_add(&mpu401_device);
 }
 
 void
@@ -1769,7 +1724,7 @@ mpu401_irq_attach(mpu_t *mpu, void (*ext_irq_update)(void *priv, int set), int (
 }
 
 static void *
-mpu401_standalone_init(const device_t *info)
+mpu401_standalone_init(UNUSED(const device_t *info))
 {
     mpu_t   *mpu;
     int      irq;
@@ -1779,18 +1734,8 @@ mpu401_standalone_init(const device_t *info)
 
     mpu401_log("mpu_init\n");
 
-    if (info->flags & DEVICE_MCA) {
-        mca_add(mpu401_mca_read, mpu401_mca_write, mpu401_mca_feedb, NULL, mpu);
-        mpu->pos_regs[0] = 0x0F;
-        mpu->pos_regs[1] = 0x6C;
-        base             = 0; /* Tell mpu401_init() that this is the MCA variant. */
-        /* According to @6c0f.adf, the IRQ is supposed to be fixed to 2.
-           This is only true for earlier models. Later ones have selectable IRQ. */
-        irq = device_get_config_int("irq");
-    } else {
-        base = device_get_config_hex16("base");
-        irq  = device_get_config_int("irq");
-    }
+    base = device_get_config_hex16("base");
+    irq  = device_get_config_int("irq");
 
     mpu401_init(mpu, base, irq, M_INTELLIGENT, device_get_config_int("receive_input"));
 
@@ -1866,42 +1811,6 @@ static const device_config_t mpu401_standalone_config[] = {
   // clang-format on
 };
 
-static const device_config_t mpu401_standalone_mca_config[] = {
-  // clang-format off
-    {
-        .name           = "irq",
-        .description    = "MPU-401 IRQ",
-        .type           = CONFIG_SELECTION,
-        .default_string = NULL,
-        .default_int    = 9,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = {
-            { .description = "IRQ 3", .value = 3 },
-            { .description = "IRQ 4", .value = 4 },
-            { .description = "IRQ 5", .value = 5 },
-            { .description = "IRQ 6", .value = 6 },
-            { .description = "IRQ 7", .value = 7 },
-            { .description = "IRQ 9", .value = 9 },
-            { .description = ""                  }
-        },
-        .bios           = { { 0 } }
-    },
-    {
-        .name           = "receive_input",
-        .description    = "Receive MIDI input",
-        .type           = CONFIG_BINARY,
-        .default_string = NULL,
-        .default_int    = 1,
-        .file_filter    = NULL,
-        .spinner        = { 0 },
-        .selection      = { { 0 } },
-        .bios           = { { 0 } }
-    },
-    { .name = "", .description = "", .type = CONFIG_END }
-  // clang-format on
-};
-
 const device_t mpu401_device = {
     .name          = "Roland MPU-IPC-T",
     .internal_name = "mpu401",
@@ -1914,18 +1823,4 @@ const device_t mpu401_device = {
     .speed_changed = NULL,
     .force_redraw  = NULL,
     .config        = mpu401_standalone_config
-};
-
-const device_t mpu401_mca_device = {
-    .name          = "Roland MPU-IMC",
-    .internal_name = "mpu401_mca",
-    .flags         = DEVICE_MCA,
-    .local         = 0,
-    .init          = mpu401_standalone_init,
-    .close         = mpu401_standalone_close,
-    .reset         = NULL,
-    .available     = NULL,
-    .speed_changed = NULL,
-    .force_redraw  = NULL,
-    .config        = mpu401_standalone_mca_config
 };

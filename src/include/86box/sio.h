@@ -20,7 +20,6 @@ extern const device_t acc3221_device;
 
 /* Acer / ALi */
 extern const device_t ali5113_device;
-extern const device_t ali5123_device;
 
 /* Chips & Technologies */
 extern const device_t f82c606_device;
@@ -70,15 +69,10 @@ extern const device_t fdc37c669_device;
 #define FDC37C93X_NO_NVR     0x01000
 #define FDC37XXXX_370        0x02000
 
-extern const device_t fdc37c93x_device;
 
-extern const device_t fdc37m60x_device;
 
-extern const device_t fdc37c67x_device;
 
 /* ITE */
-extern const device_t it8661f_device;
-extern const device_t it8671f_device;
 
 /* Intel */
 #define I82091AA_022         0x00000    /* Default. */
@@ -124,14 +118,11 @@ extern const device_t pc87310_device;
 #define PCX730X_BADDR        0x03000
 #define PCX730X_BADDR_SHIFT       12
 
-extern const device_t pc87306_device;
 
 extern const device_t pc873xx_device;
 
 /* National Semiconductors PC87307 / PC87309 */
-extern const device_t pc87307_device;
 
-extern const device_t pc87309_device;
 
 /* LG Prime */
 #define GM82C803A            0x00000
@@ -142,14 +133,12 @@ extern const device_t pc87309_device;
 
 extern const device_t gm82c803ab_device;
 
-extern const device_t gm82c803c_device;
 
 /* IBM PS/1 */
 extern const device_t ps1_m2133_sio;
 
 /* Super I/O Detect */
 #ifdef USE_SIO_DETECT
-extern const device_t sio_detect_device;
 #endif /* USE_SIO_DETECT */
 
 /* UMC */
@@ -166,9 +155,7 @@ extern const device_t um866x_device;
 extern const device_t um8669f_device;
 
 /* VIA */
-extern void vt82c686_sio_write(uint8_t addr, uint8_t val, void *priv);
 
-extern const device_t via_vt82c686_sio_device;
 
 /* VLSI */
 extern const device_t vl82c113_device;

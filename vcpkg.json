@@ -22,39 +22,6 @@
         "libsndfile"
     ],
     "features": {
-        "qt-ui": {
-            "description": "Qt User Interface",
-            "dependencies": [
-                {
-                    "name": "qtbase",
-                    "default-features": false,
-                    "features": [
-                        "thread",
-                        "gui",
-                        "opengl",
-                        "harfbuzz",
-                        "network",
-                        "vulkan",
-                        "widgets",
-                        "png",
-                        "zstd"
-                    ]
-                },
-                {
-                    "name": "qtbase",
-                    "default-features": false,
-                    "host": true
-                },
-                {
-                    "name": "qttools",
-                    "default-features": false,
-                    "features": [
-                        "linguist"
-                    ],
-                    "host": true
-                }
-            ]
-        },
         "munt": {
             "description": "Roland MT-32 emulation",
             "dependencies": [

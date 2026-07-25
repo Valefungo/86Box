@@ -65,8 +65,6 @@
 #include <86box/network.h>
 #include <86box/net_ne2000.h>
 #include <86box/net_pcnet.h>
-#include <86box/net_wd8003.h>
-#include <86box/net_smc_epic100.h>
 
 #ifdef _WIN32
 #    define WIN32_LEAN_AND_MEAN
@@ -88,42 +86,16 @@ static const NETWORK_CARD net_cards[] = {
     { &device_none                },
     { &device_internal            },
     /* ISA */
-    { &threec501_device           },
-    { &threec503_device           },
-    { &ne1000_compat_device       },
     { &ne2000_compat_8bit_device  },
-    { &ne1000_device              },
     { &ne2000_device              },
-    { &rtl8019as_pnp_device       },
-    { &wd8003e_device             },
-    { &wd8003eb_device            },
-    { &wd8013ebt_device           },
     /* COM */
     { &modem_device               },
     /* LPT */
     { &plip_device                },
     /* ISA16 */
-    { &pcnet_am79c960_device      },
-    { &pcnet_am79c961_device      },
-    { &de220p_device              },
     { &ne2000_compat_device       },
-    { &pcnet_am79c960_eb_device   },
-    /* MCA */
-    { &ethernext_mc_device        },
-    { &wd8003ea_device            },
-    { &wd8003eta_device           },
-    { &wd8013epa_device           },
     /* VLB */
     { &pcnet_am79c960_vlb_device  },
-    /* PCI */
-    { &pcnet_am79c973_device      },
-    { &pcnet_am79c970a_device     },
-    { &dec_tulip_21040_device     },
-    { &dec_tulip_21140_device     },
-    { &dec_tulip_device           },
-    { &rtl8029as_device           },
-    { &rtl8139c_plus_device       },
-    { &smc_epic100_device         },
     { NULL                        }
     // clang-format on
 };
@@ -131,9 +103,6 @@ static const NETWORK_CARD net_cards[] = {
 static const net_card_migrate_t
 net_cards_migrate[] = {
   // clang-format off
-    /* DECchip 21140 "Tulip FasterNet" */
-    { .device = &dec_tulip_21140_device,                        .old_internal_name = "dec_21140_tulip"                },
-    { .device = &dec_tulip_21140_device,                        .old_internal_name = "dec_21140_tulip_vpc"            },
     /* End of table */
     { .device = NULL,                                           .old_internal_name = ""                               }
   // clang-format on

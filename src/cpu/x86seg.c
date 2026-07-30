@@ -485,6 +485,10 @@ loadcs(uint16_t seg)
 {
     uint16_t      segdat[4];
     uint32_t      addr;
+#ifdef ESP_PLATFORM
+    if (seg == 0x5200)
+        pclog("# loadcs: seg=%04X old_cs=%04X pc=%08X\n", seg, CS, cpu_state.pc);
+#endif
     uint32_t     *segdat32 = (uint32_t *) segdat;
     const x86seg *dt;
 
@@ -582,6 +586,10 @@ loadcsjmp(uint16_t seg, uint32_t old_pc)
     uint32_t      addr;
     uint32_t      newpc;
     uint32_t     *segdat32 = (uint32_t *) segdat;
+#ifdef ESP_PLATFORM
+    if (seg == 0x5200)
+        pclog("# loadcsjmp: seg=%04X old_cs=%04X old_pc=%08X\n", seg, CS, old_pc);
+#endif
     const x86seg *dt;
 
     if ((msw & 1) && !(cpu_state.eflags & VM_FLAG)) {
@@ -885,6 +893,10 @@ loadcscall(uint16_t seg)
     uint16_t      segdat[4];
     uint16_t      segdat2[4];
     uint32_t      addr;
+#ifdef ESP_PLATFORM
+    if (seg == 0x5200)
+        pclog("# loadcscall: seg=%04X old_cs=%04X pc=%08X\n", seg, CS, cpu_state.pc);
+#endif
     uint32_t      oldssbase = ss;
     uint32_t      oaddr;
     uint32_t      newpc;

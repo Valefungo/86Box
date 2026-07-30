@@ -81,13 +81,13 @@ static uint8_t bug_seg1;
 static uint8_t bug_seg2;  /* LEFT and RIGHT 7SEG displays */
 static uint8_t bug_spcfg; /* serial port configuration */
 #define FIFO_LEN 256
-static uint8_t  bug_buff[FIFO_LEN]; /* serial port data buffer */
-static uint8_t *bug_bptr;
+static uint8_t  ESP32_BIG_BSS_ATTR bug_buff[FIFO_LEN]; /* serial port data buffer */
+static uint8_t *ESP32_BIG_BSS_ATTR bug_bptr;
 
 static char LED_R[] = "<font color=\"#EE0000\">R</font>";
 static char LED_G[] = "<font color=\"#00CC00\">G</font>";
 #define UISTR_LEN (17 + 8 * sizeof(LED_G) + 8 * sizeof(LED_R))
-static char bug_str[UISTR_LEN]; /* UI output string */
+static char ESP32_BIG_BSS_ATTR bug_str[UISTR_LEN]; /* UI output string */
 
 extern void ui_sb_bugui(char *__str);
 

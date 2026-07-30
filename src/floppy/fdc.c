@@ -73,14 +73,14 @@ const uint8_t command_has_drivesel[32] = {
 static uint8_t current_drive = 0;
 
 static void fdc_callback(void *priv);
-int         lastbyte = 0;
+int         ESP32_BIG_BSS_ATTR lastbyte = 0;
 
-int floppymodified[4];
-int floppyrate[4];
+int ESP32_BIG_BSS_ATTR floppymodified[4];
+int ESP32_BIG_BSS_ATTR floppyrate[4];
 
 int fdc_current[FDC_MAX] = { FDC_INTERNAL, 0 };
 
-volatile int fdcinited = 0;
+volatile int ESP32_BIG_BSS_ATTR fdcinited = 0;
 
 #ifdef ENABLE_FDC_LOG
 int fdc_do_log = ENABLE_FDC_LOG;

@@ -45,7 +45,7 @@ enum {
 
 #define FIFO_SIZE      16
 
-int mouse_scan = 0;
+int ESP32_BIG_BSS_ATTR mouse_scan = 0;
 
 #ifdef ENABLE_MOUSE_PS2_LOG
 int mouse_ps2_do_log = ENABLE_MOUSE_PS2_LOG;
@@ -160,7 +160,7 @@ ps2_write(void *priv)
     int b;
     uint8_t  temp;
     uint8_t  val;
-    static uint8_t last_data[6] = { 0x00 };
+    static uint8_t ESP32_BIG_BSS_ATTR last_data[6] = { 0x00 };
 
     if (dev->port == NULL)
         return;

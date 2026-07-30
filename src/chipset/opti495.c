@@ -358,7 +358,17 @@ opti495_recalc(opti495_t *dev)
         mem_set_mem_state_both(base, 0x4000, shflags);
     }
 
-    flushmmucache_nopc();
+    /* This reprograms shadow RAM for 0xc0000-0xfffff, changing which
+     * buffer (ROM vs. shadow RAM) backs those pages' exec mapping.
+     * flushmmucache_nopc() (unlike flushmmucache()) deliberately leaves
+     * pccache/pccache2 - the CPU's single-entry instruction-fetch exec
+     * cache - untouched; if the CPU had that cache primed for one of
+     * these now-remapped pages, it keeps dereferencing the old, stale
+     * buffer pointer until something else evicts it, which can fault or
+     * derail execution. Use the full flush here, matching what
+     * opti495_recalc_banks() (the sibling function reprogramming actual
+     * RAM banks) already does above. */
+    flushmmucache();
 }
 
 static void

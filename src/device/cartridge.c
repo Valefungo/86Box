@@ -33,12 +33,12 @@ typedef struct cart_t {
     uint32_t base;
 } cart_t;
 
-char cart_fns[2][MAX_IMAGE_PATH_LEN];
-char *cart_image_history[2][CART_IMAGE_HISTORY];
+char ESP32_BIG_BSS_ATTR cart_fns[2][MAX_IMAGE_PATH_LEN];
+char *ESP32_BIG_BSS_ATTR cart_image_history[2][CART_IMAGE_HISTORY];
 
-static cart_t carts[2];
+static cart_t ESP32_BIG_BSS_ATTR carts[2];
 
-static mem_mapping_t cart_mappings[2];
+static mem_mapping_t ESP32_BIG_BSS_ATTR cart_mappings[2];
 
 #ifdef ENABLE_CARTRIDGE_LOG
 int cartridge_do_log = ENABLE_CARTRIDGE_LOG;

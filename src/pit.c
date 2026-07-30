@@ -42,33 +42,33 @@
 #include <86box/video.h>
 #include <86box/plat_unused.h>
 
-pit_intf_t pit_devs[2];
+pit_intf_t ESP32_BIG_BSS_ATTR pit_devs[2];
 
-double cpuclock;
-double PITCONSTD;
-double PAS16CONSTD;
-double PAS16CONST2D;
-double PASSCSICONSTD;
-double SYSCLK;
-double isa_timing;
-double bus_timing;
-double pci_timing;
-double agp_timing;
-double PCICLK;
-double AGPCLK;
+double ESP32_BIG_BSS_ATTR cpuclock;
+double ESP32_BIG_BSS_ATTR PITCONSTD;
+double ESP32_BIG_BSS_ATTR PAS16CONSTD;
+double ESP32_BIG_BSS_ATTR PAS16CONST2D;
+double ESP32_BIG_BSS_ATTR PASSCSICONSTD;
+double ESP32_BIG_BSS_ATTR SYSCLK;
+double ESP32_BIG_BSS_ATTR isa_timing;
+double ESP32_BIG_BSS_ATTR bus_timing;
+double ESP32_BIG_BSS_ATTR pci_timing;
+double ESP32_BIG_BSS_ATTR agp_timing;
+double ESP32_BIG_BSS_ATTR PCICLK;
+double ESP32_BIG_BSS_ATTR AGPCLK;
 
-uint64_t PITCONST;
-uint64_t PAS16CONST;
-uint64_t PAS16CONST2;
-uint64_t PASSCSICONST;
-uint64_t ISACONST;
-uint64_t CGACONST;
-uint64_t MDACONST;
-uint64_t HERCCONST;
-uint64_t VGACONST1;
-uint64_t VGACONST2;
-uint64_t RTCCONST;
-uint64_t ACPICONST;
+uint64_t ESP32_BIG_BSS_ATTR PITCONST;
+uint64_t ESP32_BIG_BSS_ATTR PAS16CONST;
+uint64_t ESP32_BIG_BSS_ATTR PAS16CONST2;
+uint64_t ESP32_BIG_BSS_ATTR PASSCSICONST;
+uint64_t ESP32_BIG_BSS_ATTR ISACONST;
+uint64_t ESP32_BIG_BSS_ATTR CGACONST;
+uint64_t ESP32_BIG_BSS_ATTR MDACONST;
+uint64_t ESP32_BIG_BSS_ATTR HERCCONST;
+uint64_t ESP32_BIG_BSS_ATTR VGACONST1;
+uint64_t ESP32_BIG_BSS_ATTR VGACONST2;
+uint64_t ESP32_BIG_BSS_ATTR RTCCONST;
+uint64_t ESP32_BIG_BSS_ATTR ACPICONST;
 
 int refresh_at_enable = 1;
 int io_delay          = 5;

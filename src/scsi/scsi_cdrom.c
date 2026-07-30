@@ -243,8 +243,8 @@ static const mode_sense_pages_t scsi_cdrom_ms_pages_changeable_sony_scsi = {
 };
 // clang-format on
 
-static gesn_cdb_t          *gesn_cdb;
-static gesn_event_header_t *gesn_event_header;
+static ESP32_BIG_BSS_ATTR gesn_cdb_t          *gesn_cdb;
+static ESP32_BIG_BSS_ATTR gesn_event_header_t *gesn_event_header;
 
 static void scsi_cdrom_command_complete(scsi_cdrom_t *dev);
 

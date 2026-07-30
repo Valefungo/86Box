@@ -33,7 +33,7 @@ typedef struct mca_slot_s {
     void    *priv;
 } mca_slot_t;
 
-static mca_slot_t mca_slots[MCA_MAX_CARDS];
+static mca_slot_t ESP32_BIG_BSS_ATTR mca_slots[MCA_MAX_CARDS];
 static uint8_t    mca_index;
 static uint8_t    mca_nr_cards;
 

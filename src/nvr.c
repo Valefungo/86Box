@@ -58,11 +58,11 @@
 #include <86box/plat.h>
 #include <86box/nvr.h>
 
-int nvr_dosave; /* NVR is dirty, needs saved */
+int ESP32_BIG_BSS_ATTR nvr_dosave; /* NVR is dirty, needs saved */
 
 static int8_t    days_in_month[12] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-static struct tm intclk;
-static nvr_t    *saved_nvr = NULL;
+static struct tm ESP32_BIG_BSS_ATTR intclk;
+static nvr_t    *ESP32_BIG_BSS_ATTR saved_nvr = NULL;
 
 #ifdef ENABLE_NVR_LOG
 int nvr_do_log = ENABLE_NVR_LOG;
@@ -190,7 +190,7 @@ nvr_init(nvr_t *nvr)
 char *
 nvr_path(char *str)
 {
-    static char temp[1024];
+    static char ESP32_BIG_BSS_ATTR temp[1024];
 
     /* Get the full prefix in place. */
     memset(temp, 0x00, sizeof(temp));

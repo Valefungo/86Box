@@ -46,7 +46,7 @@
 #define PORT_6X_MIRROR   4
 #define PORT_6X_SWA      8
 
-static int cycles_sub = 0;
+static int ESP32_BIG_BSS_ATTR cycles_sub = 0;
 
 static void
 port_6x_write(uint16_t port, uint8_t val, void *priv)

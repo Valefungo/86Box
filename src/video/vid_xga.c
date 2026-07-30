@@ -60,7 +60,7 @@ static uint8_t xga_read(uint32_t addr, void *priv);
 static uint16_t xga_readw(uint32_t addr, void *priv);
 static uint32_t xga_readl(uint32_t addr, void *priv);
 
-int xga_active = 0;
+int ESP32_BIG_BSS_ATTR xga_active = 0;
 
 #ifdef ENABLE_XGA_LOG
 int xga_do_log = ENABLE_XGA_LOG;

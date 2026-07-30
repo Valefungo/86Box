@@ -8231,54 +8231,6 @@ const machine_t machines[] = {
         .net_device               = NULL,
         .aliases                  = { "" }
     },
-    /* Uses an Intel KBC with Phoenix MultiKey KBC firmware. */
-    {
-        .name              = "[SiS 461] DEC DECpc LPV+",
-        .internal_name     = "decpclpv",
-        .type              = MACHINE_TYPE_486,
-        .chipset           = MACHINE_CHIPSET_SIS_461,
-        .init              = machine_at_decpclpv_init,
-        .p1_handler        = machine_generic_p1_handler,
-        .gpio_handler      = NULL,
-        .available_flag    = MACHINE_AVAILABLE,
-        .gpio_acpi_handler = NULL,
-        .cpu               = {
-            .package     = CPU_PKG_SOCKET1,
-            .block       = CPU_BLOCK_NONE,
-            .min_bus     = 25000000,
-            .max_bus     = 50000000,
-            .min_voltage = 5000,
-            .max_voltage = 5000,
-            .min_multi   = 0,
-            .max_multi   = 0
-        },
-        .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE | MACHINE_VIDEO | MACHINE_APM,
-        .ram       = {
-            .min  = 1024,
-            .max  = 65536,
-            .step = 1024
-        },
-        .nvrmask                  = 127,
-        .jumpered_ecp_dma         = 0,
-        .default_jumpered_ecp_dma = -1,
-        .kbc_device               = &kbc_at_device,
-        .kbc_params               = KBC_VEN_PHOENIX | 0x00012900, /* Guess. */
-        .nvr_device               = &nvr_at_device,
-        .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
-        .kbc_p1                   = 0x00000cf0,
-        .gpio                     = 0xffffffff,
-        .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
-        .kbd_device               = NULL,
-        .fdc_device               = NULL,
-        .vid_device               = &s3_86c805_onboard_vlb_device,
-        .snd_device               = NULL,
-        .net_device               = NULL,
-        .aliases                  = { "" }
-    },
     /* Has Phoenix KBC firmware. */
     {
         .name              = "[SiS 471] AST Advantage! 40xxd",
@@ -10078,54 +10030,6 @@ const machine_t machines[] = {
         .kbd_device               = NULL,
         .fdc_device               = NULL,
         .vid_device               = NULL,
-        .snd_device               = NULL,
-        .net_device               = NULL,
-        .aliases                  = { "" }
-    },
-    /* Has an Intel 82C42PE with Phoenix MultiKey/C42 KBC firmware, copyrighted 1993. */
-    {
-        .name              = "[SiS 471] DEC Venturis 4xx",
-        .internal_name     = "dvent4xx",
-        .type              = MACHINE_TYPE_486_S3,
-        .chipset           = MACHINE_CHIPSET_SIS_471,
-        .init              = machine_at_dvent4xx_init,
-        .p1_handler        = machine_generic_p1_handler,
-        .gpio_handler      = NULL,
-        .available_flag    = MACHINE_AVAILABLE,
-        .gpio_acpi_handler = NULL,
-        .cpu               = {
-            .package     = CPU_PKG_SOCKET3,
-            .block       = CPU_BLOCK_NONE,
-            .min_bus     = 25000000,
-            .max_bus     = 40000000,
-            .min_voltage = 3300,
-            .max_voltage = 5000,
-            .min_multi   = 0,
-            .max_multi   = 0
-        },
-        .bus_flags = MACHINE_PS2,
-        .flags     = MACHINE_IDE_DUAL | MACHINE_SUPER_IO | MACHINE_APM | MACHINE_VIDEO,
-        .ram       = {
-            .min  = 4096,
-            .max  = 69632,
-            .step = 4096
-        },
-        .nvrmask                  = 127,
-        .jumpered_ecp_dma         = MACHINE_DMA_DISABLED,
-        .default_jumpered_ecp_dma = 4,
-        .kbc_device               = &kbc_at_device,
-        .kbc_params               = KBC_VEN_PHOENIX | 0x00021400, /* Guess. */
-        .nvr_device               = &nvr_at_device,
-        .nvr_params               = NVR_AT,
-        .sio_device               = NULL,
-        .sio_params               = 0x00000000,
-        .kbc_p1                   = 0x00000cf0,
-        .gpio                     = 0xffffffff,
-        .gpio_acpi                = 0xffffffff,
-        .device                   = NULL,
-        .kbd_device               = NULL,
-        .fdc_device               = NULL,
-        .vid_device               = &s3_trio32_onboard_vlb_device,
         .snd_device               = NULL,
         .net_device               = NULL,
         .aliases                  = { "" }
@@ -12530,18 +12434,18 @@ static const char *dma_names[9]   = { "None", "Disabled", "0", "1", "2", "3", "5
 
 /* Saved copies - jumpers get applied to these.
    We use also machine_gpio to store IBM PC/XT jumpers as they need more than one byte. */
-static uint32_t machine_p1_default;
-static uint32_t machine_p1;
+static uint32_t ESP32_BIG_BSS_ATTR machine_p1_default;
+static uint32_t ESP32_BIG_BSS_ATTR machine_p1;
 
-static uint32_t machine_gpio_default;
-static uint32_t machine_gpio;
+static uint32_t ESP32_BIG_BSS_ATTR machine_gpio_default;
+static uint32_t ESP32_BIG_BSS_ATTR machine_gpio;
 
-static uint32_t machine_gpio_acpi_default;
-static uint32_t machine_gpio_acpi;
+static uint32_t ESP32_BIG_BSS_ATTR machine_gpio_acpi_default;
+static uint32_t ESP32_BIG_BSS_ATTR machine_gpio_acpi;
 
-static int machine_is_ps2 = 0;
+static int ESP32_BIG_BSS_ATTR machine_is_ps2 = 0;
 
-void *machine_snd = NULL;
+void *ESP32_BIG_BSS_ATTR machine_snd = NULL;
 
 uint8_t
 machine_get_p1_default(void)
@@ -12809,10 +12713,10 @@ machine_get_nvrmask(int m)
     return (machines[m].nvrmask);
 }
 
-int
-machine_has_flags(int m, uintptr_t flags)
+uint64_t
+machine_has_flags(int m, uint64_t flags)
 {
-    int ret = machines[m].flags & flags;
+    uint64_t ret = machines[m].flags & flags;
 
     /* Can't have PS/2 ports with an AT KBC. */
     if ((flags & MACHINE_PS2_KBC) &&
@@ -12837,10 +12741,10 @@ machine_force_ps2(int is_ps2)
     machine_is_ps2 = is_ps2;
 }
 
-int
-machine_has_flags_ex(uintptr_t flags)
+uint64_t
+machine_has_flags_ex(uint64_t flags)
 {
-    int ret = machine_has_flags(machine, flags);
+    uint64_t ret = machine_has_flags(machine, flags);
 
     if (flags & MACHINE_PS2_KBC) {
         if (machine_is_ps2 && (machines[machine].init != machine_at_pc5286_init))

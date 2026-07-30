@@ -29,8 +29,8 @@
 #include <86box/fdd_pcjs.h>
 #include <cJSON.h>
 
-static pcjs_t *images[FDD_NUM];
-static pcjs_error_t pcjs_error = E_SUCCESS;
+static pcjs_t *ESP32_BIG_BSS_ATTR images[FDD_NUM];
+static ESP32_BIG_BSS_ATTR pcjs_error_t pcjs_error = E_SUCCESS;
 
 struct pcjs_error_description {
     int code;

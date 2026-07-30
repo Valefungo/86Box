@@ -1510,7 +1510,7 @@ dumpstream(UNUSED(int track), UNUSED(uint8_t *stream), UNUSED(int len))
 #endif
 }
 
-static int bitoffset;
+static ESP32_BIG_BSS_ATTR int bitoffset;
 
 static inline void
 addbit(uint8_t *p, int bit)
@@ -1528,10 +1528,10 @@ struct pulse_sample {
 
 #define FDI_MAX_ARRAY 10                        /* change this value as you want */
 static int                 pulse_limitval = 15; /* tolerance of 15% */
-static struct pulse_sample psarray[FDI_MAX_ARRAY];
-static int                 array_index;
-static uint32_t            total;
-static int                 totaldiv;
+static struct pulse_sample ESP32_BIG_BSS_ATTR psarray[FDI_MAX_ARRAY];
+static int                 ESP32_BIG_BSS_ATTR array_index;
+static uint32_t            ESP32_BIG_BSS_ATTR total;
+static int                 ESP32_BIG_BSS_ATTR totaldiv;
 
 static void
 init_array(uint32_t standard_MFM_2_bit_cell_size, int nb_of_bits)

@@ -654,8 +654,8 @@ static const uint8_t trans_masks[16][16] = {
   // clang-format on
 };
 
-static int8_t dither5[256][2][2];
-static int8_t dither6[256][2][2];
+static int8_t ESP32_BIG_BSS_ATTR dither5[256][2][2];
+static int8_t ESP32_BIG_BSS_ATTR dither6[256][2][2];
 static double bayer_mat[4][4] =
 {
     { 0.0, 8. / 16., 2. / 16., 10. / 16.},
@@ -6292,9 +6292,9 @@ mystique_hwcursor_draw(svga_t *svga, int displine)
         case XCURCTRL_CURMODE_XGA:
             for (uint8_t x = 0; x < 64; x++) {
                 if (!(dat[1] & (1ULL << 63)))
-                    svga->monitor->target_buffer->line[displine][(offset + svga->x_add) & 2047] = (dat[0] & (1ULL << 63)) ? svga_lookup_lut_ram(svga, mystique->cursor.col[1]) : svga_lookup_lut_ram(svga, mystique->cursor.col[0]);
+                    svga->monitor->target_buffer->line[displine][(offset + svga->x_add) & 1023] = (dat[0] & (1ULL << 63)) ? svga_lookup_lut_ram(svga, mystique->cursor.col[1]) : svga_lookup_lut_ram(svga, mystique->cursor.col[0]);
                 else if (dat[0] & (1ULL << 63))
-                    svga->monitor->target_buffer->line[displine][(offset + svga->x_add) & 2047] ^= 0xffffff;
+                    svga->monitor->target_buffer->line[displine][(offset + svga->x_add) & 1023] ^= 0xffffff;
 
                 offset++;
                 dat[0] <<= 1;
@@ -6305,7 +6305,7 @@ mystique_hwcursor_draw(svga_t *svga, int displine)
         case XCURCTRL_CURMODE_XWIN:
             for (uint8_t x = 0; x < 64; x++) {
                 if ((dat[1] & (1ULL << 63)))
-                    svga->monitor->target_buffer->line[displine][(offset + svga->x_add) & 2047] = (dat[0] & (1ULL << 63)) ? (mystique->cursor.col[1]) : (mystique->cursor.col[0]);
+                    svga->monitor->target_buffer->line[displine][(offset + svga->x_add) & 1023] = (dat[0] & (1ULL << 63)) ? (mystique->cursor.col[1]) : (mystique->cursor.col[0]);
 
                 offset++;
                 dat[0] <<= 1;

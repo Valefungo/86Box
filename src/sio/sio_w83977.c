@@ -81,7 +81,7 @@ typedef struct w83977_t {
     lpt_t        *lpt;
 } w83977_t;
 
-static int next_id = 0;
+static int ESP32_BIG_BSS_ATTR next_id = 0;
 
 static void    w83977_write(uint16_t port, uint8_t val, void *priv);
 static uint8_t w83977_read(uint16_t port, void *priv);
@@ -1299,7 +1299,7 @@ w83977_init(const device_t *info)
     dev->has_nvr   = !(info->local & W83977_NO_NVR);
 
     if (dev->has_nvr && (dev->id != 1)) {
-        dev->nvr = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_AT_ZERO_DEFAULT);
+        dev->nvr = device_add_params64(&nvr_at_device, NVR_AT_ZERO_DEFAULT);
 
         nvr_bank_set(0, 0, dev->nvr);
     }

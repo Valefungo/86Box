@@ -228,8 +228,8 @@ typedef struct tape_t {
     uint32_t format_offset;
 } tape_t;
 
-static tape_t  tape;
-static fdc_t  *tape_fdc = NULL;
+static tape_t  ESP32_BIG_BSS_ATTR tape;
+static fdc_t  *ESP32_BIG_BSS_ATTR tape_fdc = NULL;
 
 /*
    The drive runs its own capstan motor under QIC-117 control and pays no
@@ -240,8 +240,8 @@ static fdc_t  *tape_fdc = NULL;
    rest of the state, and a registered timer must never be memset while it
    might still be linked into the timer list.
  */
-static pc_timer_t tape_timer;
-static int        tape_timer_added = 0;
+static pc_timer_t ESP32_BIG_BSS_ATTR tape_timer;
+static int        ESP32_BIG_BSS_ATTR tape_timer_added = 0;
 
 /*
    QIC-117 delimits commands by time, not by seek boundaries: a pulse train
@@ -249,8 +249,8 @@ static int        tape_timer_added = 0;
    the drive act on the count. This timer measures that gap. It lives
    outside tape_t for the same reason as the transfer clock above.
  */
-static pc_timer_t tape_cmd_timer;
-static int        tape_cmd_timer_added = 0;
+static pc_timer_t ESP32_BIG_BSS_ATTR tape_cmd_timer;
+static int        ESP32_BIG_BSS_ATTR tape_cmd_timer_added = 0;
 
 /* QIC-117 rev. J table 1: command time-out, nominal 2.5 ms. */
 #define TAPE_TTIMEOUT (2500ULL * TIMER_USEC)
@@ -260,12 +260,12 @@ static int        tape_cmd_timer_added = 0;
    the host is reading them - and the host tracks its position by watching
    the sector IDs go by with READ ID. This timer keeps that position moving.
  */
-static pc_timer_t tape_motion_timer;
-static int        tape_motion_timer_added = 0;
+static pc_timer_t ESP32_BIG_BSS_ATTR tape_motion_timer;
+static int        ESP32_BIG_BSS_ATTR tape_motion_timer_added = 0;
 
-int  fdd_tape_enabled = 0;
+int  ESP32_BIG_BSS_ATTR fdd_tape_enabled = 0;
 int  fdd_tape_unit    = 1;
-char fdd_tape_fn[MAX_IMAGE_PATH_LEN];
+char ESP32_BIG_BSS_ATTR fdd_tape_fn[MAX_IMAGE_PATH_LEN];
 
 #ifdef ENABLE_FDD_TAPE_LOG
 int fdd_tape_do_log = ENABLE_FDD_TAPE_LOG;

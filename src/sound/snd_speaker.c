@@ -15,17 +15,19 @@
  *          Copyright 2016-2019 Miran Grca.
  */
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <86box/86box.h>
 #include <86box/device.h>
 #include <86box/snd_speaker.h>
 #include <86box/sound.h>
 
-int speaker_mute       = 0;
-int speaker_gated      = 0;
-int speaker_enable     = 0;
-int was_speaker_enable = 0;
+int ESP32_BIG_BSS_ATTR speaker_mute       = 0;
+int ESP32_BIG_BSS_ATTR speaker_gated      = 0;
+int ESP32_BIG_BSS_ATTR speaker_enable     = 0;
+int ESP32_BIG_BSS_ATTR was_speaker_enable = 0;
 
-int speakon;
+int ESP32_BIG_BSS_ATTR speakon;
 
 typedef struct speaker_t {
     int32_t buffer[MUSICBUFLEN];
@@ -35,7 +37,7 @@ typedef struct speaker_t {
     double  count;
 } speaker_t;
 
-speaker_t *speaker = NULL;
+speaker_t *ESP32_BIG_BSS_ATTR speaker = NULL;
 
 void
 speaker_set_count(const uint8_t new_m, const int new_count)

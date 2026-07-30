@@ -59,7 +59,7 @@ void
 svga_render_blank(svga_t *svga)
 {
     if (((svga->displine + svga->y_add) < 0) ||
-        ((svga->displine + svga->y_add) >= 2048) ||
+        ((svga->displine + svga->y_add) >= 1024) ||
         (svga->monitor->target_buffer == NULL) ||
         (svga->monitor->target_buffer->line[svga->displine + svga->y_add] == NULL))
         return;
@@ -171,7 +171,7 @@ svga_render_text_40(svga_t *svga)
     svga->lastline_draw = svga->displine;
 
     if (svga->fullchange) {
-        p    = &svga->monitor->target_buffer->line[(svga->displine + svga->y_add) & 2047][(svga->x_add) & 2047];
+        p    = &svga->monitor->target_buffer->line[(svga->displine + svga->y_add) & 1023][(svga->x_add) & 1023];
         xinc = (svga->seqregs[1] & 1) ? 16 : 18;
 
         for (int x = 0; x < (svga->hdisp + svga->scrollcache); x += xinc) {
@@ -256,7 +256,7 @@ svga_render_text_80(svga_t *svga)
     svga->lastline_draw = svga->displine;
 
     if (svga->fullchange) {
-        p    = &svga->monitor->target_buffer->line[(svga->displine + svga->y_add) & 2047][(svga->x_add) & 2047];
+        p    = &svga->monitor->target_buffer->line[(svga->displine + svga->y_add) & 1023][(svga->x_add) & 1023];
         xinc = (svga->seqregs[1] & 1) ? 8 : 9;
 
         static uint32_t col = 0x00000000;

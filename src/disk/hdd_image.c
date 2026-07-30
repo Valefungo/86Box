@@ -57,11 +57,11 @@ typedef struct hdd_image_t {
     plat_device_vol_locked_t *locked_drives;
 } hdd_image_t;
 
-hdd_image_t hdd_images[HDD_NUM];
+hdd_image_t ESP32_BIG_BSS_ATTR hdd_images[HDD_NUM];
 
-static char  empty_sector[512];
+static char  ESP32_BIG_BSS_ATTR empty_sector[512];
 #ifndef __unix__
-static char *empty_sector_1mb;
+static char *ESP32_BIG_BSS_ATTR empty_sector_1mb;
 #endif
 
 #ifdef ENABLE_HDD_IMAGE_LOG

@@ -253,9 +253,9 @@ int timing_misaligned;
 uint32_t cpu_features;
 uint32_t cpu_fast_off_flags;
 
-uint32_t _tr[8]      = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint32_t ESP32_BIG_BSS_ATTR _tr[8]      = { 0, 0, 0, 0, 0, 0, 0, 0 };
 uint32_t cache_index = 0;
-uint8_t  _cache[2048];
+uint8_t  ESP32_BIG_BSS_ATTR _cache[2048];
 
 uint64_t cpu_CR4_mask;
 uint64_t tsc = 0;
@@ -263,9 +263,9 @@ uint64_t tsc = 0;
 double cpu_dmulti;
 double cpu_busspeed;
 
-msr_t msr;
+msr_t ESP32_BIG_BSS_ATTR msr;
 
-cyrix_t cyrix;
+cyrix_t ESP32_BIG_BSS_ATTR cyrix;
 
 cpu_family_t *cpu_f;
 CPU          *cpu_s;
@@ -286,11 +286,11 @@ uint8_t ccr7;
 uint8_t cxpmr;
 
 uint8_t reg_30 = 0x00;
-uint8_t arr[24] = { 0 };
+uint8_t ESP32_BIG_BSS_ATTR arr[24] = { 0 };
 uint8_t rcr[8] = { 0 };
 
 /* Table for FXTRACT. */
-double exp_pow_table[0x800];
+double ESP32_BIG_BSS_ATTR exp_pow_table[0x800];
 
 static int cyrix_addr;
 

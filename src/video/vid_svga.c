@@ -42,21 +42,25 @@
 #include <86box/vid_xga.h>
 #include <86box/vid_svga.h>
 #include <86box/vid_svga_render.h>
+
+#ifdef ESP_PLATFORM
+#include <esp_heap_caps.h>
+#endif
 #include <86box/vid_xga_device.h>
 
 void svga_doblit(int wx, int wy, svga_t *svga);
 void svga_poll(void *priv);
 
-svga_t *svga_8514;
+svga_t *ESP32_BIG_BSS_ATTR svga_8514;
 
 extern int     cyc_total;
 extern uint8_t edatlookup[4][4];
 
-uint8_t svga_rotate[8][256];
+uint8_t ESP32_BIG_BSS_ATTR svga_rotate[8][256];
 
 /*Primary SVGA device. As multiple video cards are not yet supported this is the
   only SVGA device.*/
-static svga_t *svga_pri;
+static svga_t *ESP32_BIG_BSS_ATTR svga_pri;
 
 #ifdef ENABLE_SVGA_LOG
 int svga_do_log = ENABLE_SVGA_LOG;
@@ -927,7 +931,7 @@ svga_recalctimings(svga_t *svga)
         svga->vblankend += 0x00000080;
 
     if (svga->hoverride || svga->override) {
-        if (svga->hdisp >= 2048)
+        if (svga->hdisp >= 1024)
             svga->monitor->mon_overscan_x = 0;
 
         svga->y_add = (svga->monitor->mon_overscan_y >> 1);
@@ -979,7 +983,7 @@ svga_recalctimings(svga_t *svga)
         if (svga->crtc[1] & 1)
             svga->monitor->mon_overscan_x++;
 
-        if ((svga->hdisp >= 2048) || (svga->left_overscan < 0)) {
+        if ((svga->hdisp >= 1024) || (svga->left_overscan < 0)) {
             svga->left_overscan = svga->x_add = 0;
             svga->monitor->mon_overscan_x = 0;
         }
@@ -988,7 +992,7 @@ svga_recalctimings(svga_t *svga)
         svga->y_add = svga->vtotal - svga->vblankend - 1;
         svga->monitor->mon_overscan_y = svga->y_add + abs(svga->vblankstart - svga->dispend);
 
-        if ((svga->dispend >= 2048) || (svga->y_add < 0)) {
+        if ((svga->dispend >= 1024) || (svga->y_add < 0)) {
             svga->y_add = 0;
             svga->monitor->mon_overscan_y = 0;
         }
@@ -1032,7 +1036,7 @@ svga_recalctimings(svga_t *svga)
             svga->monitor->mon_overscan_x = svga->x_add + (dev->h_sync_start << 3) - _8514_hd + 8;
             svga->monitor->mon_overscan_x++;
 
-            if ((dev->hdisp >= 2048) || (svga->left_overscan < 0)) {
+            if ((dev->hdisp >= 1024) || (svga->left_overscan < 0)) {
                 svga->left_overscan = svga->x_add = 0;
                 svga->monitor->mon_overscan_x = 0;
             }
@@ -1041,7 +1045,7 @@ svga_recalctimings(svga_t *svga)
             svga->y_add = svga->vtotal - svga->vblankend - 1;
             svga->monitor->mon_overscan_y = svga->y_add + abs(svga->vblankstart - svga->dispend);
 
-            if ((dev->dispend >= 2048) || (svga->y_add < 0)) {
+            if ((dev->dispend >= 1024) || (svga->y_add < 0)) {
                 svga->y_add = 0;
                 svga->monitor->mon_overscan_y = 0;
             }
@@ -1311,7 +1315,7 @@ svga_do_render(svga_t *svga)
 
     if (svga->dac_hwcursor_on) {
         if (!svga->override && svga->dac_hwcursor_draw)
-            svga->dac_hwcursor_draw(svga, (svga->displine + svga->y_add + ((svga->dac_hwcursor_latch.y >= 0) ? 0 : svga->dac_hwcursor_latch.y)) & 2047);
+            svga->dac_hwcursor_draw(svga, (svga->displine + svga->y_add + ((svga->dac_hwcursor_latch.y >= 0) ? 0 : svga->dac_hwcursor_latch.y)) & 1023);
         svga->dac_hwcursor_on--;
         if (svga->dac_hwcursor_on && svga->interlace)
             svga->dac_hwcursor_on--;
@@ -1319,7 +1323,7 @@ svga_do_render(svga_t *svga)
 
     if (svga->hwcursor_on) {
         if (!svga->override && svga->hwcursor_draw)
-            svga->hwcursor_draw(svga, (svga->displine + svga->y_add + ((svga->hwcursor_latch.y >= 0) ? 0 : svga->hwcursor_latch.y)) & 2047);
+            svga->hwcursor_draw(svga, (svga->displine + svga->y_add + ((svga->hwcursor_latch.y >= 0) ? 0 : svga->hwcursor_latch.y)) & 1023);
 
         svga->hwcursor_on--;
         if (svga->hwcursor_on && svga->interlace)
@@ -1699,11 +1703,27 @@ svga_init(const device_t *info, svga_t *svga, void *priv, int memsize,
     svga->dispontime        = 1000ULL << 32;
     svga->dispofftime       = 1000ULL << 32;
     svga->bpp               = 8;
+#ifdef ESP_PLATFORM
+    pclog("# svga_init: about to alloc vram (%d bytes) - free PSRAM=%u free internal=%u largest_psram=%u largest_internal=%u\n",
+          memsize + 4096,
+          (unsigned) heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+          (unsigned) heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+          (unsigned) heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM),
+          (unsigned) heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+#endif
     svga->vram              = calloc(memsize + 4096, 1);
+    if (svga->vram == NULL) {
+        fatal("Failed to allocate %d bytes of video RAM. Make sure you have enough RAM available.\n", memsize + 4096);
+        return 0;
+    }
     svga->vram_max          = memsize;
     svga->vram_display_mask = svga->vram_mask = memsize - 1;
     svga->decode_mask                         = 0x7fffff;
     svga->changedvram                         = calloc((memsize >> 12) + 1, 1);
+    if (svga->changedvram == NULL) {
+        fatal("Failed to allocate %d bytes of video RAM change map. Make sure you have enough RAM available.\n", (memsize >> 12) + 1);
+        return 0;
+    }
     svga->recalctimings_ex                    = recalctimings_ex;
     svga->video_in                            = video_in;
     svga->video_out                           = video_out;
@@ -2197,9 +2217,11 @@ svga_doblit(int wx, int wy, svga_t *svga)
         svga->monitor->mon_xsize = xs_temp;
         svga->monitor->mon_ysize = ys_temp;
 
-        if ((svga->monitor->mon_xsize > 1984) || (svga->monitor->mon_ysize > 2016)) {
-            /* 2048x2048 is the biggest safe render texture, to account for overscan,
-               we suppress overscan starting from x 1984 and y 2016. */
+        if ((svga->monitor->mon_xsize > 960) || (svga->monitor->mon_ysize > 992)) {
+            /* 1024x1024 is the biggest safe render texture on this build, to
+               account for overscan, we suppress overscan starting from
+               x 960 and y 992 (same 64/32px margins as the original 2048
+               cap, just off the smaller base). */
             x_add             = 0;
             y_add             = 0;
             suppress_overscan = 1;

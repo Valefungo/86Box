@@ -203,7 +203,7 @@ static const uint8_t d_len[256] = {
     0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08,
 };
 
-static td0_t *td0[FDD_NUM];
+static td0_t *ESP32_BIG_BSS_ATTR td0[FDD_NUM];
 
 #ifdef ENABLE_TD0_LOG
 int td0_do_log = ENABLE_TD0_LOG;

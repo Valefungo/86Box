@@ -47,7 +47,7 @@
 
 #define IDE_ATAPI_IS_EARLY             id->sc->pad0
 
-tape_drive_t tape_drives[TAPE_NUM];
+tape_drive_t ESP32_BIG_BSS_ATTR tape_drives[TAPE_NUM];
 
 /* Default block size for fixed-mode operations. */
 #define TAPE_DEFAULT_BLOCK_SIZE 512

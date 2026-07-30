@@ -29,11 +29,11 @@
 #include <86box/mem.h>
 #include <86box/smram.h>
 
-static smram_t *base_smram;
-static smram_t *last_smram;
+static smram_t *ESP32_BIG_BSS_ATTR base_smram;
+static smram_t *ESP32_BIG_BSS_ATTR last_smram;
 
 static uint8_t use_separate_smram = 0;
-static uint8_t smram[0x40000];
+static uint8_t ESP32_BIG_BSS_ATTR smram[0x40000];
 
 #ifdef ENABLE_SMRAM_LOG
 int smram_do_log = ENABLE_SMRAM_LOG;

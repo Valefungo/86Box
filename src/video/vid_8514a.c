@@ -247,7 +247,7 @@ CLAMP(int16_t in, int16_t min, int16_t max)
         dev->changedvram[(((addr)) & (dev->vram_mask)) >> 12] = svga->monitor->mon_changeframecount;      \
     }
 
-int ibm8514_active = 0;
+int ESP32_BIG_BSS_ATTR ibm8514_active = 0;
 
 int
 ibm8514_cpu_src(svga_t *svga)
@@ -3897,7 +3897,7 @@ ibm8514_poll(void *priv)
 
                     if (dev->hwcursor_on) {
                         if (svga->hwcursor_draw)
-                            svga->hwcursor_draw(svga, (dev->displine + svga->y_add + ((dev->hwcursor_latch.y >= 0) ? 0 : dev->hwcursor_latch.y)) & 2047);
+                            svga->hwcursor_draw(svga, (dev->displine + svga->y_add + ((dev->hwcursor_latch.y >= 0) ? 0 : dev->hwcursor_latch.y)) & 1023);
                         dev->hwcursor_on--;
                         if (dev->hwcursor_on && dev->interlace)
                             dev->hwcursor_on--;

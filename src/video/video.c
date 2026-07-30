@@ -18,8 +18,17 @@
  *          Copyright 2016-2019 Miran Grca.
  */
 #include <stdatomic.h>
+/* video_screenshot_monitor()/video_take_screenshot_monitor() below (the
+ * F12-style screenshot-to-PNG feature) are already unreachable dead code
+ * in this minimal fork - the UI hotkey that used to call
+ * video_screenshot_monitor() was removed along with Qt, and grepping the
+ * whole tree finds zero remaining callers. libpng doesn't exist on
+ * ESP-IDF, so skip both the include and the two functions there instead
+ * of vendoring libpng for genuinely dead code. */
+#ifndef ESP_PLATFORM
 #define PNG_DEBUG 0
 #include <png.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -45,35 +54,35 @@
 
 #include <minitrace/minitrace.h>
 
-volatile int screenshots = 0;
-uint8_t      edatlookup[4][4];
-uint8_t      egaremap2bpp[256];
-uint8_t      fontdat[2048][8];            /* IBM CGA font */
-uint8_t      fontdatm[2048][16];          /* IBM MDA font */
-uint8_t      fontdatw[512][32];           /* Wyse700 font */
-uint8_t      fontdat8x12[256][16];        /* MDSI Genius font */
-uint8_t      fontdat12x18[256][36];       /* IM1024 font */
-dbcs_font_t *fontdatksc5601       = NULL; /* Korean KSC-5601 font */
-dbcs_font_t *fontdatksc5601_user  = NULL; /* Korean KSC-5601 user defined font */
-int          herc_blend           = 0;
-int          frames               = 0;
-int          fullchange           = 0;
-int          video_grayscale      = 0;
-int          video_graytype       = 0;
-int          monitor_index_global = 0;
-uint32_t    *video_6to8           = NULL;
-uint32_t    *video_8togs          = NULL;
-uint32_t    *video_8to32          = NULL;
-uint32_t    *video_15to32         = NULL;
-uint32_t    *video_16to32         = NULL;
-monitor_t          monitors[MONITORS_NUM];
-monitor_settings_t monitor_settings[MONITORS_NUM];
-atomic_bool        doresize_monitors[MONITORS_NUM];
+volatile int ESP32_BIG_BSS_ATTR screenshots = 0;
+uint8_t      ESP32_BIG_BSS_ATTR edatlookup[4][4];
+uint8_t      ESP32_BIG_BSS_ATTR egaremap2bpp[256];
+uint8_t      ESP32_BIG_BSS_ATTR fontdat[2048][8];            /* IBM CGA font */
+uint8_t      ESP32_BIG_BSS_ATTR fontdatm[2048][16];          /* IBM MDA font */
+uint8_t      ESP32_BIG_BSS_ATTR fontdatw[512][32];           /* Wyse700 font */
+uint8_t      ESP32_BIG_BSS_ATTR fontdat8x12[256][16];        /* MDSI Genius font */
+uint8_t      ESP32_BIG_BSS_ATTR fontdat12x18[256][36];       /* IM1024 font */
+dbcs_font_t *ESP32_BIG_BSS_ATTR fontdatksc5601       = NULL; /* Korean KSC-5601 font */
+dbcs_font_t *ESP32_BIG_BSS_ATTR fontdatksc5601_user  = NULL; /* Korean KSC-5601 user defined font */
+int          ESP32_BIG_BSS_ATTR herc_blend           = 0;
+int          ESP32_BIG_BSS_ATTR frames               = 0;
+int          ESP32_BIG_BSS_ATTR fullchange           = 0;
+int          ESP32_BIG_BSS_ATTR video_grayscale      = 0;
+int          ESP32_BIG_BSS_ATTR video_graytype       = 0;
+int          ESP32_BIG_BSS_ATTR monitor_index_global = 0;
+uint32_t    *ESP32_BIG_BSS_ATTR video_6to8           = NULL;
+uint32_t    *ESP32_BIG_BSS_ATTR video_8togs          = NULL;
+uint32_t    *ESP32_BIG_BSS_ATTR video_8to32          = NULL;
+uint32_t    *ESP32_BIG_BSS_ATTR video_15to32         = NULL;
+uint32_t    *ESP32_BIG_BSS_ATTR video_16to32         = NULL;
+monitor_t          ESP32_BIG_BSS_ATTR monitors[MONITORS_NUM];
+monitor_settings_t ESP32_BIG_BSS_ATTR monitor_settings[MONITORS_NUM];
+atomic_bool        ESP32_BIG_BSS_ATTR doresize_monitors[MONITORS_NUM];
 
 #ifdef _WIN32
 void * (*__cdecl video_copy)(void *_Dst, const void *_Src, size_t _Size) = memcpy;
 #else
-void *(*video_copy)(void *__restrict, const void *__restrict, size_t);
+void *(*ESP32_BIG_BSS_ATTR video_copy)(void *__restrict, const void *__restrict, size_t);
 #endif
 
 PALETTE cgapal = {
@@ -214,9 +223,9 @@ typedef struct blit_data_struct {
     event_t  *buffer_not_in_use;
 } blit_data_t;
 
-static uint32_t cga_2_table[16];
+static uint32_t ESP32_BIG_BSS_ATTR cga_2_table[16];
 
-static void (*blit_func)(int x, int y, int w, int h, int monitor_index);
+static void (*ESP32_BIG_BSS_ATTR blit_func)(int x, int y, int w, int h, int monitor_index);
 
 #ifdef ENABLE_VIDEO_LOG
 int video_do_log = ENABLE_VIDEO_LOG;
@@ -271,6 +280,7 @@ video_wait_for_buffer_monitor(int monitor_index)
     thread_reset_event(blit_data_ptr->buffer_not_in_use);
 }
 
+#ifndef ESP_PLATFORM
 static png_structp png_ptr[MONITORS_NUM];
 static png_infop   info_ptr[MONITORS_NUM];
 
@@ -349,10 +359,12 @@ video_take_screenshot_monitor(const char *fn, uint32_t *buf, int start_x, int st
     if (fp)
         fclose(fp);
 }
+#endif /* ESP_PLATFORM */
 
 void
 video_screenshot_monitor(uint32_t *buf, int start_x, int start_y, int row_len, int monitor_index)
 {
+#ifndef ESP_PLATFORM
     char path[1024];
     char fn[256];
 
@@ -377,6 +389,13 @@ video_screenshot_monitor(uint32_t *buf, int start_x, int start_y, int row_len, i
     png_destroy_write_struct(&png_ptr[monitor_index], &info_ptr[monitor_index]);
 
     atomic_fetch_sub(&monitors[monitor_index].mon_screenshots_raw, 1);
+#else
+    (void) buf;
+    (void) start_x;
+    (void) start_y;
+    (void) row_len;
+    (void) monitor_index;
+#endif
 }
 
 void
@@ -427,15 +446,51 @@ blit_thread(void *param)
     }
 }
 
+#ifdef CLAUDE_LOG
+/* Diagnostic (2026-07-27): is the content-dependent cost seen in cga_poll()
+ * actually spent rendering pixels, or is it the blocking wait below for the
+ * PREVIOUS frame's async panel push (blit_thread) to finish - which would
+ * naturally take longer after a busier frame (more changed lines = bigger
+ * MIPI-DSI DMA transfer)? Cumulative time spent inside
+ * video_wait_for_blit_monitor(), reported alongside cga_poll_us from
+ * pc_run()'s diagnostic block in 86box.c. Was ESP_PLATFORM-only
+ * (2026-07-27); widened to CLAUDE_LOG (2026-07-30) - see the
+ * claude_log_now_us() comment in 86box.h for why plat_timer_read()
+ * itself isn't used directly any more (not microseconds on desktop). */
+uint64_t esp32_blit_wait_time_us = 0;
+uint32_t esp32_blit_wait_calls   = 0;
+#endif
+
 void
 video_blit_memtoscreen_monitor(int x, int y, int w, int h, int monitor_index)
 {
     MTR_BEGIN("video", "video_blit_memtoscreen");
 
+#ifdef CLAUDE_LOG
+    /* Diagnostic: confirms whether the core ever actually requests a
+     * redraw at all (vs. e.g. the ESP32-side blit callback/panel push
+     * being the broken link) - rate-limited to avoid flooding the
+     * console at CGA/VGA redraw rates. */
+    static int esp32_blit_req_count = 0;
+    if (esp32_blit_req_count < 5 || (esp32_blit_req_count % 200) == 0)
+        pclog("# video_blit_memtoscreen_monitor #%d: mon=%d x=%d y=%d w=%d h=%d\n",
+              esp32_blit_req_count, monitor_index, x, y, w, h);
+    esp32_blit_req_count++;
+#endif
+
     if ((w <= 0) || (h <= 0))
         return;
 
+#ifdef CLAUDE_LOG
+    {
+        uint64_t esp32_wait_t0 = claude_log_now_us();
+        video_wait_for_blit_monitor(monitor_index);
+        esp32_blit_wait_time_us += (claude_log_now_us() - esp32_wait_t0);
+        esp32_blit_wait_calls++;
+    }
+#else
     video_wait_for_blit_monitor(monitor_index);
+#endif
 
     monitors[monitor_index].mon_blit_data_ptr->busy          = 1;
     monitors[monitor_index].mon_blit_data_ptr->buffer_in_use = 1;
@@ -775,7 +830,7 @@ destroy_bitmap(bitmap_t *b)
 bitmap_t *
 create_bitmap(int x, int y)
 {
-    bitmap_t *b = calloc(sizeof(bitmap_t), (y * sizeof(uint32_t *)));
+    bitmap_t *b = calloc(1, sizeof(bitmap_t));
 
     b->dat = calloc((size_t) x * y, 4);
     for (int c = 0; c < y; c++)
@@ -801,7 +856,7 @@ video_monitor_init(int index)
     monitors[index].mon_unscaled_size_y                  = 480;
     monitors[index].mon_bpp                              = 8;
     monitors[index].mon_changeframecount                 = 2;
-    monitors[index].target_buffer                        = create_bitmap(2048, 2048);
+    monitors[index].target_buffer                        = create_bitmap(1024, 1024);
     monitors[index].mon_blit_data_ptr                    = calloc(1, sizeof(blit_data_t));
     monitors[index].mon_blit_data_ptr->wake_blit_thread  = thread_create_event();
     monitors[index].mon_blit_data_ptr->blit_complete     = thread_create_event();

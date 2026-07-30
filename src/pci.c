@@ -59,18 +59,18 @@ typedef struct pci_mirq_t {
     uint8_t     pad;
 } pci_mirq_t;
 
-int         pci_burst_time;
-int         agp_burst_time;
-int         pci_nonburst_time;
-int         agp_nonburst_time;
+int         ESP32_BIG_BSS_ATTR pci_burst_time;
+int         ESP32_BIG_BSS_ATTR agp_burst_time;
+int         ESP32_BIG_BSS_ATTR pci_nonburst_time;
+int         ESP32_BIG_BSS_ATTR agp_nonburst_time;
 
-int         pci_flags;
+int         ESP32_BIG_BSS_ATTR pci_flags;
 
 uint32_t    pci_base = 0xc000;
 uint32_t    pci_size = 0x1000;
 
-static pci_card_t  pci_cards[PCI_CARDS_NUM];
-static pci_card_desc_t  pci_card_descs[PCI_CARDS_NUM];
+static pci_card_t  ESP32_BIG_BSS_ATTR pci_cards[PCI_CARDS_NUM];
+static pci_card_desc_t  ESP32_BIG_BSS_ATTR pci_card_descs[PCI_CARDS_NUM];
 static uint8_t     pci_pmc = 0;
 static uint8_t     last_pci_card = 0;
 static uint8_t     last_normal_pci_card = 0;
@@ -79,20 +79,20 @@ static uint8_t     last_pci_bus = 1;
 static uint8_t     next_pci_card = 0;
 static uint8_t     normal_pci_cards = 0;
 static uint8_t     next_normal_pci_card = 0;
-static uint8_t     pci_card_to_slot_mapping[256][PCI_CARDS_NUM];
-static uint8_t     pci_bus_number_to_index_mapping[256];
-static uint8_t     pci_irqs[PCI_IRQS_NUM];
-static uint8_t     pci_irq_level[PCI_IRQS_NUM];
-static uint64_t    pci_irq_hold[PCI_IRQS_NUM];
-static pci_mirq_t  pci_mirqs[PCI_MIRQS_NUM];
-static int         pci_index;
-static int         pci_func;
-static int         pci_card;
-static int         pci_bus;
-static int         pci_key;
-static int         pci_trc_reg = 0;
-static int         pci_access_len = 0;
-static uint32_t    pci_enable = 0x00000000;
+static uint8_t     ESP32_BIG_BSS_ATTR pci_card_to_slot_mapping[256][PCI_CARDS_NUM];
+static uint8_t     ESP32_BIG_BSS_ATTR pci_bus_number_to_index_mapping[256];
+static uint8_t     ESP32_BIG_BSS_ATTR pci_irqs[PCI_IRQS_NUM];
+static uint8_t     ESP32_BIG_BSS_ATTR pci_irq_level[PCI_IRQS_NUM];
+static uint64_t    ESP32_BIG_BSS_ATTR pci_irq_hold[PCI_IRQS_NUM];
+static pci_mirq_t  ESP32_BIG_BSS_ATTR pci_mirqs[PCI_MIRQS_NUM];
+static int         ESP32_BIG_BSS_ATTR pci_index;
+static int         ESP32_BIG_BSS_ATTR pci_func;
+static int         ESP32_BIG_BSS_ATTR pci_card;
+static int         ESP32_BIG_BSS_ATTR pci_bus;
+static int         ESP32_BIG_BSS_ATTR pci_key;
+static int         ESP32_BIG_BSS_ATTR pci_trc_reg = 0;
+static int         ESP32_BIG_BSS_ATTR pci_access_len = 0;
+static uint32_t    ESP32_BIG_BSS_ATTR pci_enable = 0x00000000;
 
 static void        pci_reset_regs(void);
 

@@ -44,15 +44,15 @@
 #include <86box/hdc_ide_sff8038i.h>
 #include <86box/sis_55xx.h>
 
-int        acpi_rtc_status     = 0;
-atomic_int acpi_pwrbut_pressed = 0;
-int        acpi_enabled        = 0;
+int        ESP32_BIG_BSS_ATTR acpi_rtc_status     = 0;
+atomic_int ESP32_BIG_BSS_ATTR acpi_pwrbut_pressed = 0;
+int        ESP32_BIG_BSS_ATTR acpi_enabled        = 0;
 
-static double cpu_to_acpi;
+static double ESP32_BIG_BSS_ATTR cpu_to_acpi;
 
-static int      acpi_power_on    = 0;
-static uint64_t acpi_last_clock  = 0ULL;
-static int      acpi_count       = 0;
+static int      ESP32_BIG_BSS_ATTR acpi_power_on    = 0;
+static uint64_t ESP32_BIG_BSS_ATTR acpi_last_clock  = 0ULL;
+static int      ESP32_BIG_BSS_ATTR acpi_count       = 0;
 
 #ifdef ENABLE_ACPI_LOG
 int acpi_do_log = ENABLE_ACPI_LOG;

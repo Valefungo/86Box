@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <86box/86box.h>
 #include <errno.h>
 #include "lzw.h"
 #include "lzwlocal.h"
@@ -88,11 +89,11 @@ static unsigned int MakeKey(const unsigned int prefixCode, const unsigned char s
 /* write encoded data */
 static int PutCodeWord(char *dest, int code);
 
-static char    *src_base;
-static uint64_t src_length = 0x0000000000000000ULL;
+static char    *ESP32_BIG_BSS_ATTR src_base;
+static uint64_t ESP32_BIG_BSS_ATTR src_length = 0x0000000000000000ULL;
 
-static uint32_t bufPos = 0x00000000;
-static uint32_t bufInPos = 0x00000000;
+static uint32_t ESP32_BIG_BSS_ATTR bufPos = 0x00000000;
+static uint32_t ESP32_BIG_BSS_ATTR bufInPos = 0x00000000;
 
 static int
 is_eob(char *src)

@@ -127,6 +127,11 @@ option(GDBSTUB      "Enable GDB stub server for debugging"                      
 option(DEV_BRANCH   "Development branch"                                         OFF)
 option(DEBUGREGS486 "Enable debug register opeartion on 486+ CPUs"               OFF)
 option(LIBASAN      "Enable compilation with the addresss sanitizer"             OFF)
+option(MEM_COMPACT_TABLES "Small fixed-size memory lookup tables instead of flat 4GB-scale arrays (saves ~90-100MB RAM at some CPU cost; requires DYNAREC=OFF)" OFF)
+
+if(MEM_COMPACT_TABLES AND DYNAREC)
+    message(FATAL_ERROR "MEM_COMPACT_TABLES requires -DDYNAREC=OFF: the small readlookup2/writelookup2/page_lookup cache relies on the dynarec's self-modifying-code tracking (pages[].block) never being populated, which only holds when no dynarec is compiled in.")
+endif()
 
 if((ARCH STREQUAL "arm64"))
     set(NEW_DYNAREC ON)

@@ -33,7 +33,7 @@
 #include <86box/sound.h>
 #include <86box/snd_opl.h>
 
-static uint32_t fm_dev_inst[FM_DRV_MAX][FM_MAX];
+static uint32_t ESP32_BIG_BSS_ATTR fm_dev_inst[FM_DRV_MAX][FM_MAX];
 
 uint8_t
 fm_driver_get_ex(int chip_id, fm_drv_t *drv, int is_48k)

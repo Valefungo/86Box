@@ -28,7 +28,7 @@
 #include <86box/hdc_ide.h>
 #include <86box/hdd.h>
 
-int hdc_current[HDC_MAX] = { 0, 0 };
+int ESP32_BIG_BSS_ATTR hdc_current[HDC_MAX] = { 0, 0 };
 
 int hdc_onboard_enabled  = 1;
 

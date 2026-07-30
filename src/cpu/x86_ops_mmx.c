@@ -29,10 +29,10 @@
 #include "386_common.h"
 #include "x86_flags.h"
 
-MMX_REG  *MMP[8];
-uint16_t *MMEP[8];
+MMX_REG  *ESP32_BIG_BSS_ATTR MMP[8];
+uint16_t *ESP32_BIG_BSS_ATTR MMEP[8];
 
-static uint16_t MME[8];
+static uint16_t ESP32_BIG_BSS_ATTR MME[8];
 
 #define MMX_GETREGP(r) fpu_softfloat ? ((MMX_REG *) &fpu_state.st_space[r].signif) : &(cpu_state.MM[r])
 void

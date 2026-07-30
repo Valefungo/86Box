@@ -76,7 +76,7 @@ static void mach32_updatemapping(mach_t *mach, svga_t *svga);
 static __inline void mach32_writew_linear(uint32_t addr, uint16_t val, mach_t *mach);
 static __inline void mach32_write_common(uint32_t addr, uint8_t val, int linear, mach_t *mach, svga_t *svga);
 
-static mach_t *reset_state = NULL;
+static mach_t *ESP32_BIG_BSS_ATTR reset_state = NULL;
 
 #ifdef ENABLE_MACH_LOG
 int mach_do_log = ENABLE_MACH_LOG;

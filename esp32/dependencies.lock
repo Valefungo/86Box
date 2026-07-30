@@ -1,0 +1,39 @@
+dependencies:
+  espressif/cmake_utilities:
+    component_hash: 351350613ceafba240b761b4ea991e0f231ac7a9f59a9ee901f751bddc0bb18f
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.1'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 0.5.3
+  espressif/esp_lcd_touch:
+    component_hash: 3f85a7d95af876f1a6ecca8eb90a81614890d0f03a038390804e5a77e2caf862
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.4.2'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.2.1
+  i2c_bus:
+    dependencies: []
+    source:
+      path: components/i2c_bus
+      type: local
+    version: 1.5.2
+  idf:
+    source:
+      type: idf
+    version: 6.0.1
+direct_dependencies:
+- espressif/cmake_utilities
+- espressif/esp_lcd_touch
+- espressif/i2c_bus
+- idf
+manifest_hash: 14547e39a2c871a2291eae8c961950a868d348b5f1e855dc36ceaab1a6d8e2d7
+target: esp32p4
+version: 3.0.0

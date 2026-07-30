@@ -48,16 +48,16 @@
 #define MIN_SEEK           2000
 #define MAX_SEEK           333333
 
-cdrom_t cdrom[CDROM_NUM] = { 0 };
+cdrom_t ESP32_BIG_BSS_ATTR cdrom[CDROM_NUM] = { 0 };
 
-uint16_t subq_crc16_table[256] = { 0 };
+uint16_t ESP32_BIG_BSS_ATTR subq_crc16_table[256] = { 0 };
 
-uint8_t  __attribute__((aligned(16))) cdrom_scramble_table[2352] = {
+uint8_t  __attribute__((aligned(16))) ESP32_BIG_BSS_ATTR cdrom_scramble_table[2352] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-int cdrom_interface_current;
-int cdrom_assigned_letters = 0;
+int ESP32_BIG_BSS_ATTR cdrom_interface_current;
+int ESP32_BIG_BSS_ATTR cdrom_assigned_letters = 0;
 
 #ifdef ENABLE_CDROM_LOG
 int cdrom_do_log = ENABLE_CDROM_LOG;
@@ -106,7 +106,7 @@ static uint8_t              status_codes[2][16]   = { { 0x13, 0x15, 0x15, 0x15, 
                                                       { 0x00, 0x00, 0x00, 0x00, 0x15, 0x11, 0x00, 0x00,
                                                         0x15, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
 static int                  mult                  = 1;
-static int                  part                  = 0;
+static int                  ESP32_BIG_BSS_ATTR part                  = 0;
 static int                  ecc_diff              = 288;
 
 static const device_t cdrom_interface_none_device = {

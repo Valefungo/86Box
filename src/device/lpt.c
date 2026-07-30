@@ -25,14 +25,14 @@
 
 #define LPT_SPINLOOP_THRESHOLD 125
 
-static int    next_inst               = 0;
-static int    lpt_3bc_used            = 0;
+static int    ESP32_BIG_BSS_ATTR next_inst               = 0;
+static int    ESP32_BIG_BSS_ATTR lpt_3bc_used            = 0;
 
-static lpt_t *lpt1;
+static lpt_t *ESP32_BIG_BSS_ATTR lpt1;
 
-lpt_port_t    lpt_ports[PARALLEL_MAX] = { 0 };
+lpt_port_t    ESP32_BIG_BSS_ATTR lpt_ports[PARALLEL_MAX] = { 0 };
 
-lpt_device_t  lpt_devs[PARALLEL_MAX];
+lpt_device_t  ESP32_BIG_BSS_ATTR lpt_devs[PARALLEL_MAX];
 
 #ifdef ENABLE_LPT_LOG
 int lpt_do_log = ENABLE_LPT_LOG;

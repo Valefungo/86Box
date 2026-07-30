@@ -35,24 +35,24 @@
 #include "808x_marty_86box.h"
 #include <86box/plat_unused.h>
 
-dma_t   dma[8];
+dma_t   ESP32_BIG_BSS_ATTR dma[8];
 uint8_t dma_e;
 uint8_t dma_m;
 
-static uint8_t  dmaregs[3][16];
-static int      dma_wp[2];
+static uint8_t  ESP32_BIG_BSS_ATTR dmaregs[3][16];
+static int      ESP32_BIG_BSS_ATTR dma_wp[2];
 static uint8_t  dma_stat;
 static uint8_t  dma_stat_rq;
 static uint8_t  dma_stat_rq_pc;
 static uint8_t  dma_stat_adv_pend;
-static uint8_t  dma_command[2];
+static uint8_t  ESP32_BIG_BSS_ATTR dma_command[2];
 static uint8_t  dma_req_is_soft;
 static uint8_t  dma_advanced;
 static uint8_t  dma_at;
-static uint8_t  dma_buffer[65536];
-static uint16_t dma_sg_base;
-static uint16_t dma16_buffer[65536];
-static uint32_t dma_mask;
+static uint8_t  ESP32_BIG_BSS_ATTR dma_buffer[65536];
+static uint16_t ESP32_BIG_BSS_ATTR dma_sg_base;
+static uint16_t ESP32_BIG_BSS_ATTR dma16_buffer[65536];
+static uint32_t ESP32_BIG_BSS_ATTR dma_mask;
 
 static struct dma_ps2_t {
     int xfr_command;
@@ -60,7 +60,7 @@ static struct dma_ps2_t {
     int byte_ptr;
 
     int is_ps2;
-} dma_ps2;
+} dma_ps2 ESP32_BIG_BSS_ATTR;
 
 /* 86BOX_XT8237_EXACT_INSTALLER_V1
  * NOCONA_XT_DMA_CONSOLIDATED_V1
@@ -85,7 +85,7 @@ typedef struct dma_xt8237_state_t {
     uint8_t in_mem_to_mem;
 } dma_xt8237_state_t;
 
-static dma_xt8237_state_t dma_xt8237;
+static dma_xt8237_state_t ESP32_BIG_BSS_ATTR dma_xt8237;
 
 /* 86BOX_MACHINE_EXACT_V1: PIT1 request latch, cleared by DACK0. */
 static bool dma_xt_refresh_queued = false;

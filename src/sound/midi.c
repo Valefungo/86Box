@@ -31,22 +31,22 @@
 #define MIDI_SYSEX_MAX_ITERATIONS 1000
 #define MIDI_SYSEX_TIMEOUT_MS 5000
 
-int        midi_output_device_current = 0;
-static int midi_output_device_last    = 0;
-int        midi_input_device_current  = 0;
-static int midi_input_device_last     = 0;
+int        ESP32_BIG_BSS_ATTR midi_output_device_current = 0;
+static int ESP32_BIG_BSS_ATTR midi_output_device_last    = 0;
+int        ESP32_BIG_BSS_ATTR midi_input_device_current  = 0;
+static int ESP32_BIG_BSS_ATTR midi_input_device_last     = 0;
 
-midi_t *midi_out = NULL;
-midi_t *midi_in  = NULL;
+midi_t *ESP32_BIG_BSS_ATTR midi_out = NULL;
+midi_t *ESP32_BIG_BSS_ATTR midi_in  = NULL;
 
-const device_t *midi_out_device = NULL;
-const device_t *midi_in_device  = NULL;
+const device_t *ESP32_BIG_BSS_ATTR midi_out_device = NULL;
+const device_t *ESP32_BIG_BSS_ATTR midi_in_device  = NULL;
 
-midi_in_handler_t *mih_first = NULL;
-midi_in_handler_t *mih_last = NULL;
-midi_in_handler_t *mih_cur = NULL;
+midi_in_handler_t *ESP32_BIG_BSS_ATTR mih_first = NULL;
+midi_in_handler_t *ESP32_BIG_BSS_ATTR mih_last = NULL;
+midi_in_handler_t *ESP32_BIG_BSS_ATTR mih_cur = NULL;
 
-uint8_t MIDI_InSysexBuf[SYSEX_SIZE];
+uint8_t ESP32_BIG_BSS_ATTR MIDI_InSysexBuf[SYSEX_SIZE];
 
 uint8_t MIDI_evt_len[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, /* 0x00 */

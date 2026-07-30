@@ -281,10 +281,115 @@ extern uint32_t mem_logical_addr;
 
 extern page_t  *pages;
 
-/* The lookup tables. */
-extern page_t *page_lookup[1048576];
-extern uintptr_t readlookup2[1048576];
-extern uintptr_t writelookup2[1048576];
+/* The lookup tables.
+ *
+ * Normally these are flat arrays indexed directly by page number
+ * (addr >> 12), sized for the entire 32-bit address space (4GB / 4K =
+ * 1048576 entries). On a build targeting a very RAM-constrained host
+ * (MEM_COMPACT_TABLES), the *working set* that is ever valid at once is
+ * already bounded to at most 256 entries by the readlookup[]/writelookup[]
+ * eviction ring buffers below - the flat array is just an O(1) cache over
+ * that bounded set. Replacing it with a small, tag-checked direct-mapped
+ * cache (hit -> same O(1) cost; tag mismatch -> treated exactly like the
+ * existing LOOKUP_INV/NULL "miss" sentinel, falling back to the same
+ * always-correct resolve path) is safe by construction: a collision can
+ * only ever produce an extra miss, never a wrong value. */
+#ifdef MEM_COMPACT_TABLES
+#    define MEM_TLB_BITS 10
+#    define MEM_TLB_SIZE (1 << MEM_TLB_BITS)
+#    define MEM_TLB_MASK (MEM_TLB_SIZE - 1)
+
+extern page_t   *page_lookup[MEM_TLB_SIZE];
+extern uintptr_t readlookup2[MEM_TLB_SIZE];
+extern uintptr_t writelookup2[MEM_TLB_SIZE];
+extern uint32_t  page_lookup_tag[MEM_TLB_SIZE];
+extern uint32_t  readlookup2_tag[MEM_TLB_SIZE];
+extern uint32_t  writelookup2_tag[MEM_TLB_SIZE];
+
+#    define MEM_TLB_SLOT(pn) ((uint32_t) (pn) &MEM_TLB_MASK)
+
+#    define PAGE_LOOKUP_GET(pn)  ((page_lookup_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) ? page_lookup[MEM_TLB_SLOT(pn)] : NULL)
+#    define READLOOKUP2_GET(pn)  ((readlookup2_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) ? readlookup2[MEM_TLB_SLOT(pn)] : (uintptr_t) LOOKUP_INV)
+#    define WRITELOOKUP2_GET(pn) ((writelookup2_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) ? writelookup2[MEM_TLB_SLOT(pn)] : (uintptr_t) LOOKUP_INV)
+
+#    define PAGE_LOOKUP_SET(pn, v) \
+        do { \
+            page_lookup[MEM_TLB_SLOT(pn)]     = (v); \
+            page_lookup_tag[MEM_TLB_SLOT(pn)] = (uint32_t) (pn); \
+        } while (0)
+#    define READLOOKUP2_SET(pn, v) \
+        do { \
+            readlookup2[MEM_TLB_SLOT(pn)]     = (v); \
+            readlookup2_tag[MEM_TLB_SLOT(pn)] = (uint32_t) (pn); \
+        } while (0)
+#    define WRITELOOKUP2_SET(pn, v) \
+        do { \
+            writelookup2[MEM_TLB_SLOT(pn)]     = (v); \
+            writelookup2_tag[MEM_TLB_SLOT(pn)] = (uint32_t) (pn); \
+        } while (0)
+
+/* Only clear a slot if it still belongs to the page being evicted - it may
+ * already have been reclaimed by a different, colliding page. */
+#    define PAGE_LOOKUP_INVALIDATE(pn) \
+        do { \
+            if (page_lookup_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) \
+                page_lookup[MEM_TLB_SLOT(pn)] = NULL; \
+        } while (0)
+#    define READLOOKUP2_INVALIDATE(pn) \
+        do { \
+            if (readlookup2_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) \
+                readlookup2[MEM_TLB_SLOT(pn)] = (uintptr_t) LOOKUP_INV; \
+        } while (0)
+#    define WRITELOOKUP2_INVALIDATE(pn) \
+        do { \
+            if (writelookup2_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) \
+                writelookup2[MEM_TLB_SLOT(pn)] = (uintptr_t) LOOKUP_INV; \
+        } while (0)
+#else
+extern page_t    *page_lookup[1048576];
+extern uintptr_t  readlookup2[1048576];
+extern uintptr_t  writelookup2[1048576];
+
+#    define PAGE_LOOKUP_GET(pn)  page_lookup[pn]
+#    define READLOOKUP2_GET(pn)  readlookup2[pn]
+#    define WRITELOOKUP2_GET(pn) writelookup2[pn]
+
+#    define PAGE_LOOKUP_SET(pn, v)  (page_lookup[pn] = (v))
+#    define READLOOKUP2_SET(pn, v)  (readlookup2[pn] = (v))
+#    define WRITELOOKUP2_SET(pn, v) (writelookup2[pn] = (v))
+
+#    define PAGE_LOOKUP_INVALIDATE(pn)  (page_lookup[pn] = NULL)
+#    define READLOOKUP2_INVALIDATE(pn)  (readlookup2[pn] = (uintptr_t) LOOKUP_INV)
+#    define WRITELOOKUP2_INVALIDATE(pn) (writelookup2[pn] = (uintptr_t) LOOKUP_INV)
+#endif
+
+/* readlookup2/writelookup2 entries are "base" pointers computed as
+ * &ram[phys - virt], which is deliberately out-of-bounds pointer
+ * arithmetic whenever phys < virt (extremely common) - relying on it to
+ * cancel out correctly once the virtual address is added back in a
+ * later, separate expression is undefined behaviour in C, even though
+ * the arithmetic happens to cancel out under plain 32-bit wraparound.
+ * getpccache()/fastreadb() already sidestep this for pccache2 by
+ * recombining through an explicit mask against a known-good pointer
+ * (exec_ptr) instead of relying on raw out-of-bounds pointer math; do
+ * the same here against ram, so the same trick used for readlookup2/
+ * writelookup2 doesn't depend on the compiler happening not to exploit
+ * the UB (observed to differ between host architectures). */
+/* On a 32-bit host, uintptr_t is only 32 bits wide, so any 0x...00000000ULL
+ * mask constant doesn't fit in it - the compiler promotes the whole
+ * expression to a 64-bit intermediate to evaluate the mask, and casting
+ * that intermediate to a 32-bit pointer type then warns "cast to pointer
+ * from integer of different size". On such hosts the recombination is a
+ * mathematical no-op anyway (the high-bits mask is always 0), so skip the
+ * masking arithmetic entirely instead of forcing it through 64-bit ops. */
+#if UINTPTR_MAX == 0xffffffffffffffffULL
+#    define PTR_RECOMBINE(p, ref) \
+        ((uintptr_t) ((((uintptr_t) (p)) & 0x00000000ffffffffULL) | (((uintptr_t) (ref)) & 0xffffffff00000000ULL)))
+#else
+#    define PTR_RECOMBINE(p, ref) ((uintptr_t) (p))
+#endif
+
+#define MEM_PTR_FIXUP(p) PTR_RECOMBINE(p, &ram[0])
 
 extern uint32_t get_phys_virt;
 extern uint32_t get_phys_phys;
@@ -298,7 +403,75 @@ extern int memspeed[11];
 
 extern uint8_t high_page; /* if a high (> 4 gb) page was detected */
 
+/* `_mem_exec[]` behaves like the M2b tables above (a small, tag-checked
+ * cache is safe) rather than like `read_mapping[]`/`write_mapping[]` below:
+ * at least one chipset (`src/chipset/wd76c10.c`, used by a kept 386SX
+ * machine) writes into it *directly*, bypassing `mem_mapping_recalc()`
+ * entirely, based on its own internal shadow-RAM state - so it cannot be
+ * replaced by a pure "resolve from the mapping list" function the way
+ * `read_mapping[]`/`write_mapping[]` can (verified: those two are only
+ * ever written by `mem_mapping_recalc()`, no other direct writers found). */
+#ifdef MEM_COMPACT_TABLES
+extern uint8_t *_mem_exec[MEM_TLB_SIZE];
+extern uint32_t _mem_exec_tag[MEM_TLB_SIZE];
+
+#    define MEM_EXEC_GET(pn) ((_mem_exec_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) ? _mem_exec[MEM_TLB_SLOT(pn)] : NULL)
+#    define MEM_EXEC_SET(pn, v) \
+        do { \
+            _mem_exec[MEM_TLB_SLOT(pn)]     = (v); \
+            _mem_exec_tag[MEM_TLB_SLOT(pn)] = (uint32_t) (pn); \
+        } while (0)
+#    define MEM_EXEC_INVALIDATE(pn) \
+        do { \
+            if (_mem_exec_tag[MEM_TLB_SLOT(pn)] == (uint32_t) (pn)) \
+                _mem_exec[MEM_TLB_SLOT(pn)] = NULL; \
+        } while (0)
+#else
 extern uint8_t *_mem_exec[MEM_MAPPINGS_NO];
+
+#    define MEM_EXEC_GET(pn)        _mem_exec[pn]
+#    define MEM_EXEC_SET(pn, v)     (_mem_exec[pn] = (v))
+#    define MEM_EXEC_INVALIDATE(pn) (_mem_exec[pn] = NULL)
+#endif
+
+/* Lazily-filled lookup used by rammap()/rammap64()/getpccache(): on a tag
+ * miss, resolves fresh (mem_mapping_resolve_exec()) and fills the small
+ * cache; on a hit, returns the cached pointer directly. In flat mode this
+ * is just the plain array read, unchanged. */
+#ifdef MEM_COMPACT_TABLES
+extern uint8_t *mem_mapping_resolve_exec(uint32_t page_num);
+extern uint8_t *mem_exec_lookup(uint32_t page_num);
+#    define MEM_EXEC_LOOKUP(pn) mem_exec_lookup(pn)
+#else
+#    define MEM_EXEC_LOOKUP(pn) _mem_exec[pn]
+#endif
+
+/* `read_mapping[]`/`write_mapping[]` (+`_bus`) ARE pure caches derived
+ * entirely from the mem_mapping_t linked list plus `_mem_state[]`/
+ * `_mem_wp[]`/`_mem_wp_bus[]` (verified: only `mem_mapping_recalc()` ever
+ * writes them) - safe to replace with an on-demand resolver instead of a
+ * cache, since there is nothing to "get wrong": either it resolves
+ * correctly or it doesn't, there is no stale-but-plausible state to worry
+ * about. `_mem_state[]`/`_mem_wp[]`/`_mem_wp_bus[]` themselves stay at
+ * full (flat) size - real callers (`src/mem/rom.c`'s top-of-4GB BIOS
+ * alias for 32-bit-bus CPUs, plus a 128MB-fixed SiS 85C4xx shadow) reach
+ * far beyond any safe small floor, unlike `pages[]`. */
+#ifdef MEM_COMPACT_TABLES
+extern mem_mapping_t *mem_mapping_resolve_read(uint32_t page_num);
+extern mem_mapping_t *mem_mapping_resolve_write(uint32_t page_num);
+extern mem_mapping_t *mem_mapping_resolve_read_bus(uint32_t page_num);
+extern mem_mapping_t *mem_mapping_resolve_write_bus(uint32_t page_num);
+
+#    define READ_MAPPING(pn)      mem_mapping_resolve_read(pn)
+#    define WRITE_MAPPING(pn)     mem_mapping_resolve_write(pn)
+#    define READ_MAPPING_BUS(pn)  mem_mapping_resolve_read_bus(pn)
+#    define WRITE_MAPPING_BUS(pn) mem_mapping_resolve_write_bus(pn)
+#else
+#    define READ_MAPPING(pn)      read_mapping[pn]
+#    define WRITE_MAPPING(pn)     write_mapping[pn]
+#    define READ_MAPPING_BUS(pn)  read_mapping_bus[pn]
+#    define WRITE_MAPPING_BUS(pn) write_mapping_bus[pn]
+#endif
 
 extern uint32_t pages_sz; /* #pages in table */
 extern int      read_type;
@@ -457,8 +630,10 @@ extern void mem_remap_top_nomid(int kb);
 
 extern void pcjr_waitstates(void *);
 
+#ifndef MEM_COMPACT_TABLES
 extern mem_mapping_t *read_mapping[MEM_MAPPINGS_NO];
 extern mem_mapping_t *write_mapping[MEM_MAPPINGS_NO];
+#endif
 
 #ifdef EMU_CPU_H
 static __inline uint32_t
@@ -476,8 +651,8 @@ get_phys(uint32_t addr)
         return addr & rammask;
     }
 
-    if (((int) (readlookup2[addr >> 12])) != -1)
-        get_phys_phys = ((uintptr_t) readlookup2[addr >> 12] + (addr & ~0xfff)) - (uintptr_t) ram;
+    if (((int) (READLOOKUP2_GET(addr >> 12))) != -1)
+        get_phys_phys = ((uintptr_t) READLOOKUP2_GET(addr >> 12) + (addr & ~0xfff)) - (uintptr_t) ram;
     else {
         pa64 = mmutranslatereal(addr, 0);
         if (pa64 > 0xffffffffULL)
@@ -501,8 +676,8 @@ get_phys_noabrt(uint32_t addr)
     if (!(cr0 >> 31))
         return addr & rammask;
 
-    if (((int) (readlookup2[addr >> 12])) != -1)
-        return ((uintptr_t) readlookup2[addr >> 12] + addr) - (uintptr_t) ram;
+    if (((int) (READLOOKUP2_GET(addr >> 12))) != -1)
+        return ((uintptr_t) READLOOKUP2_GET(addr >> 12) + addr) - (uintptr_t) ram;
 
     phys_addr   = mmutranslate_noabrt(addr, 0);
     phys_addr32 = (uint32_t) phys_addr;

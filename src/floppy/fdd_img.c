@@ -70,11 +70,11 @@ typedef struct img_t {
 } img_t;
 
 
-static img_t    *img[FDD_NUM];
-static fdc_t    *img_fdc;
+static img_t    *ESP32_BIG_BSS_ATTR img[FDD_NUM];
+static fdc_t    *ESP32_BIG_BSS_ATTR img_fdc;
 
-static double    bit_rate_300;
-static char     *ext;
+static double    ESP32_BIG_BSS_ATTR bit_rate_300;
+static char     *ESP32_BIG_BSS_ATTR ext;
 static uint8_t   first_byte;
 static uint8_t   second_byte;
 static uint8_t   third_byte;

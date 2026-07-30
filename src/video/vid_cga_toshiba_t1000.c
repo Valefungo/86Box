@@ -55,11 +55,11 @@
 #define T1000_YSIZE 200
 
 /* Mapping of attributes to colours */
-static uint32_t blue;
-static uint32_t grey;
-static uint8_t  boldcols[256]; /* Which attributes use the bold font */
-static uint32_t blinkcols[256][2];
-static uint32_t normcols[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR blue;
+static uint32_t ESP32_BIG_BSS_ATTR grey;
+static uint8_t  ESP32_BIG_BSS_ATTR boldcols[256]; /* Which attributes use the bold font */
+static uint32_t ESP32_BIG_BSS_ATTR blinkcols[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR normcols[256][2];
 static uint8_t  language;
 
 static video_timings_t timing_t1000 = { VIDEO_ISA, 8, 16, 32, 8, 16, 32 };

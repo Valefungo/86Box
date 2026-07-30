@@ -50,6 +50,7 @@
 #include "version.h"
 #include "cwalk.h"
 #include "xml2_encoding.h"
+#include <86box/86box.h>
 
 
 struct MVHDPaths {
@@ -62,10 +63,10 @@ struct MVHDPaths {
 };
 
 
-int mvhd_errno = 0;
+int ESP32_BIG_BSS_ATTR mvhd_errno = 0;
 
 
-static char tmp_open_path[MVHD_MAX_PATH_BYTES] = {0};
+static char ESP32_BIG_BSS_ATTR tmp_open_path[MVHD_MAX_PATH_BYTES] = {0};
 
 
 /**

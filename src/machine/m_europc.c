@@ -136,7 +136,7 @@ typedef struct europc_t {
     void *mouse;
 } europc_t;
 
-static europc_t europc;
+static europc_t ESP32_BIG_BSS_ATTR europc;
 
 #ifdef ENABLE_EUROPC_LOG
 int europc_do_log = ENABLE_EUROPC_LOG;

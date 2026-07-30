@@ -48,7 +48,7 @@ typedef struct fdc37c669_t {
     serial_t *uart[2];
 } fdc37c669_t;
 
-static int next_id = 0;
+static int ESP32_BIG_BSS_ATTR next_id = 0;
 
 #ifdef ENABLE_FDC37C669_LOG
 int fdc37c669_do_log = ENABLE_FDC37C669_LOG;

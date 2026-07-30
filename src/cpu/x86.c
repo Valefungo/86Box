@@ -45,9 +45,18 @@
 /* The opcode of the instruction currently being executed. */
 uint8_t opcode;
 
-/* The tables to speed up the setting of the Z, N, and P cpu_state.flags. */
-uint8_t  znptable8[256];
-uint16_t znptable16[65536];
+/* The tables to speed up the setting of the Z, N, and P cpu_state.flags.
+ * znptable8 was moved to internal SRAM on 2026-07-28 (motivated by the
+ * BasiliskII/tiny386 memory-access comparison) and real hardware testing
+ * then showed a genuine ~6x cpu_exec() regression that persisted even
+ * after reverting every other same-day change (~30 unrelated config
+ * globals) - by elimination, this move itself is the cause, for reasons
+ * not yet understood (internal SRAM access should never be slower than
+ * PSRAM - this contradicts the naive expectation, so trust the hardware
+ * measurement over the theory, same lesson as the -O2 regression).
+ * Reverted back to PSRAM pending further investigation. */
+uint8_t  ESP32_BIG_BSS_ATTR znptable8[256];
+uint16_t ESP32_BIG_BSS_ATTR znptable16[65536];
 
 /* A 16-bit zero, needed because some speed-up arrays contain pointers to it. */
 uint16_t zero = 0;

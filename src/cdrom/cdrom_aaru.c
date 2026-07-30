@@ -144,26 +144,26 @@ typedef enum
     OpticalDisc               =  0
 } XmlMediaType;
 
-int     (* AARU_CALL f_aaruf_identify)(const char *filename);
-void*   (* AARU_CALL f_aaruf_open)(const char *filepath, bool resume_mode,
+int     (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_identify)(const char *filename);
+void*   (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_open)(const char *filepath, bool resume_mode,
                                    const char *options);
-void*   (* AARU_CALL f_aaruf_close)(void *context);
-int32_t (* AARU_CALL f_aaruf_get_tracks)(const void *context, uint8_t *buffer,
+void*   (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_close)(void *context);
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_get_tracks)(const void *context, uint8_t *buffer,
                                          size_t *length);
-int32_t (* AARU_CALL f_aaruf_set_tracks)(const void *context, TrackEntry *tracks,
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_set_tracks)(const void *context, TrackEntry *tracks,
                                          int count);
-int32_t (* AARU_CALL f_aaruf_read_sector)(void *context, uint64_t sector_address,
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_read_sector)(void *context, uint64_t sector_address,
                                           bool negative, uint8_t *data,
                                           uint32_t *length, uint8_t *sector_status);
-int32_t (* AARU_CALL f_aaruf_read_sector_long)(void *context, uint64_t sector_address,
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_read_sector_long)(void *context, uint64_t sector_address,
                                                bool negative, uint8_t *data,
                                                uint32_t *length, uint8_t *sector_status);
-int32_t (* AARU_CALL f_aaruf_read_sector_tag)(const void *context, uint64_t sector_address,
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_read_sector_tag)(const void *context, uint64_t sector_address,
                                               bool negative, uint8_t *buffer,
                                               uint32_t *length, int32_t tag);
-int32_t (* AARU_CALL f_aaruf_read_media_tag)(void *context, uint8_t *data,
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_read_media_tag)(void *context, uint8_t *data,
                                              int32_t tag, uint32_t *length);
-int32_t (* AARU_CALL f_aaruf_get_image_info)(const void *context, ImageInfo *image_info);
+int32_t (* AARU_CALL ESP32_BIG_BSS_ATTR f_aaruf_get_image_info)(const void *context, ImageInfo *image_info);
 
 static dllimp_t aaruf_imports[] = {
     { "aaruf_identify",         &f_aaruf_identify         },
@@ -179,7 +179,7 @@ static dllimp_t aaruf_imports[] = {
     { NULL,                     NULL                      },
 };
 
-static volatile void* libaaruformat_handle = NULL;
+static volatile void* ESP32_BIG_BSS_ATTR libaaruformat_handle = NULL;
 static bool load_failed = false;
 
 static bool

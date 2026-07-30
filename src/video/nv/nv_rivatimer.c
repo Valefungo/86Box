@@ -20,14 +20,17 @@ Since Windows XP, QueryPerformanceCounter and QueryPerformanceFrequency cannot f
 
 */
 
+#include <stdint.h>
+#include <stdio.h>
+#include <86box/86box.h>
 #include <86box/nv/vid_nv_rivatimer.h>
 
 #ifdef _WIN32
 LARGE_INTEGER performance_frequency;
 #endif
 
-rivatimer_t* rivatimer_head;        // The head of the rivatimer list. 
-rivatimer_t* rivatimer_tail;        // The tail of the rivatimer list.
+rivatimer_t* ESP32_BIG_BSS_ATTR rivatimer_head;        // The head of the rivatimer list.
+rivatimer_t* ESP32_BIG_BSS_ATTR rivatimer_tail;        // The tail of the rivatimer list.
 
 /* Functions only used in this translation unit */
 bool rivatimer_really_exists(rivatimer_t* rivatimer);   // Determine if a rivatimer really exists in the linked list.

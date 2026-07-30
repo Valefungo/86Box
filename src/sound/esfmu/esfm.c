@@ -54,10 +54,12 @@
 
 #include "esfm.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdbool.h>
+#include <86box/86box.h>
 
 /*
  * Log-scale quarter sine table extracted from OPL3 ROM; taken straight from
@@ -1517,10 +1519,10 @@ ESFM_envelope_calc_emu(esfm_slot *slot)
  * the 72 single steps. The step function is linear over GF(2) so it decomposes
  * into table lookups.
  */
-static uint32_t lfsr_jump72_lo[256];
-static uint32_t lfsr_jump72_mid[256];
-static uint32_t lfsr_jump72_hi[128];
-static int lfsr_jump72_ready = 0;
+static uint32_t ESP32_BIG_BSS_ATTR lfsr_jump72_lo[256];
+static uint32_t ESP32_BIG_BSS_ATTR lfsr_jump72_mid[256];
+static uint32_t ESP32_BIG_BSS_ATTR lfsr_jump72_hi[128];
+static int ESP32_BIG_BSS_ATTR lfsr_jump72_ready = 0;
 
 static inline uint32_t
 ESFM_lfsr_step(uint32_t noise)

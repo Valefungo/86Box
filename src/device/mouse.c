@@ -44,18 +44,18 @@ typedef struct mouse_t {
     const device_t *device;
 } mouse_t;
 
-int mouse_type = 0;
-int mouse_input_mode;
+int ESP32_BIG_BSS_ATTR mouse_type = 0;
+int ESP32_BIG_BSS_ATTR mouse_input_mode;
 int mouse_timed = 1;
-int mouse_tablet_in_proximity = 0;
+int ESP32_BIG_BSS_ATTR mouse_tablet_in_proximity = 0;
 int tablet_tool_type          = 1; /* 0 = Puck/Cursor, 1 = Pen */
 
-double mouse_x_abs;
-double mouse_y_abs;
+double ESP32_BIG_BSS_ATTR mouse_x_abs;
+double ESP32_BIG_BSS_ATTR mouse_y_abs;
 
 double mouse_sensitivity = 1.0;
 
-pc_timer_t mouse_timer; /* mouse event timer */
+pc_timer_t ESP32_BIG_BSS_ATTR mouse_timer; /* mouse event timer */
 
 static const device_t mouse_none_device = {
     .name          = "None",
@@ -113,20 +113,20 @@ static mouse_t mouse_devices[] = {
     // clang-format on
 };
 
-static ATOMIC_DOUBLE   mouse_x;
-static ATOMIC_DOUBLE   mouse_y;
-static ATOMIC_INT      mouse_z;
-static ATOMIC_INT      mouse_w;
-static ATOMIC_INT      mouse_buttons;
+static ATOMIC_DOUBLE   ESP32_BIG_BSS_ATTR mouse_x;
+static ATOMIC_DOUBLE   ESP32_BIG_BSS_ATTR mouse_y;
+static ATOMIC_INT      ESP32_BIG_BSS_ATTR mouse_z;
+static ATOMIC_INT      ESP32_BIG_BSS_ATTR mouse_w;
+static ATOMIC_INT      ESP32_BIG_BSS_ATTR mouse_buttons;
 
-static int             mouse_delta_b;
-static int             mouse_old_b;
+static int             ESP32_BIG_BSS_ATTR mouse_delta_b;
+static int             ESP32_BIG_BSS_ATTR mouse_old_b;
 
-static void           *mouse_priv;
-static int             mouse_nbut;
-static int             mouse_raw;
-static int (*mouse_dev_poll)(void *priv);
-static void (*mouse_poll_ex)(void) = NULL;
+static void           *ESP32_BIG_BSS_ATTR mouse_priv;
+static int             ESP32_BIG_BSS_ATTR mouse_nbut;
+static int             ESP32_BIG_BSS_ATTR mouse_raw;
+static int (*ESP32_BIG_BSS_ATTR mouse_dev_poll)(void *priv);
+static void (*ESP32_BIG_BSS_ATTR mouse_poll_ex)(void) = NULL;
 
 static double          sample_rate = 200.0;
 

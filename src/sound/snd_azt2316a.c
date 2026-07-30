@@ -201,7 +201,7 @@ static int azt2316a_wss_irq[8] = { 5, 7, 9, 10, 11, 12, 14, 15 }; /* W95 only us
 static uint16_t azt2316a_wss_addr[4] = {0x530, 0x604, 0xe80, 0xf40};
 #endif
 
-static double aztpr16_vols_5bits[32];
+static double ESP32_BIG_BSS_ATTR aztpr16_vols_5bits[32];
 
 typedef struct azt2316a_t {
     int type;

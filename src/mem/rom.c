@@ -485,8 +485,46 @@ rom_load_linear(const char *fn, uint32_t addr, int sz, int off, uint8_t *ptr)
     if (ptr != NULL) {
         if (fseek(fp, off, SEEK_SET) == -1)
             fatal("rom_load_linear(): Error seeking to the beginning of the file\n");
-        if (fread(ptr + addr, 1, sz, fp) > sz)
+        size_t read_bytes = fread(ptr + addr, 1, sz, fp);
+        if (read_bytes > (size_t) sz)
             fatal("rom_load_linear(): Error reading data\n");
+#ifdef ESP_PLATFORM
+        /* Diagnostic: is the file actually being read correctly from the
+         * SD card, byte-for-byte? A wrong/corrupt/truncated ROM image
+         * (bad copy, LFN aliasing, etc.) can make a checksum-verifying
+         * BIOS hang forever in a way that looks identical to a slow/stuck
+         * CPU - print enough to cross-check against the reference file
+         * with simple, always-available tools (file size, first/last 16
+         * bytes via `xxd`, and a trivial additive checksum reproducible
+         * with `python3 -c "print(sum(open(f,'rb').read()) & 0xffffffff)"`). */
+        uint32_t simple_sum = 0;
+        for (size_t i = 0; i < read_bytes; i++)
+            simple_sum += (ptr + addr)[i];
+        pclog("# rom_load_linear '%s': read %zu/%d bytes, sum=%08X, "
+              "first16=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X, "
+              "last16=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n",
+              fn, read_bytes, sz, simple_sum,
+              (ptr + addr)[0], (ptr + addr)[1], (ptr + addr)[2], (ptr + addr)[3],
+              (ptr + addr)[4], (ptr + addr)[5], (ptr + addr)[6], (ptr + addr)[7],
+              (ptr + addr)[8], (ptr + addr)[9], (ptr + addr)[10], (ptr + addr)[11],
+              (ptr + addr)[12], (ptr + addr)[13], (ptr + addr)[14], (ptr + addr)[15],
+              (read_bytes >= 16) ? (ptr + addr)[read_bytes - 16] : 0,
+              (read_bytes >= 15) ? (ptr + addr)[read_bytes - 15] : 0,
+              (read_bytes >= 14) ? (ptr + addr)[read_bytes - 14] : 0,
+              (read_bytes >= 13) ? (ptr + addr)[read_bytes - 13] : 0,
+              (read_bytes >= 12) ? (ptr + addr)[read_bytes - 12] : 0,
+              (read_bytes >= 11) ? (ptr + addr)[read_bytes - 11] : 0,
+              (read_bytes >= 10) ? (ptr + addr)[read_bytes - 10] : 0,
+              (read_bytes >= 9) ? (ptr + addr)[read_bytes - 9] : 0,
+              (read_bytes >= 8) ? (ptr + addr)[read_bytes - 8] : 0,
+              (read_bytes >= 7) ? (ptr + addr)[read_bytes - 7] : 0,
+              (read_bytes >= 6) ? (ptr + addr)[read_bytes - 6] : 0,
+              (read_bytes >= 5) ? (ptr + addr)[read_bytes - 5] : 0,
+              (read_bytes >= 4) ? (ptr + addr)[read_bytes - 4] : 0,
+              (read_bytes >= 3) ? (ptr + addr)[read_bytes - 3] : 0,
+              (read_bytes >= 2) ? (ptr + addr)[read_bytes - 2] : 0,
+              (read_bytes >= 1) ? (ptr + addr)[read_bytes - 1] : 0);
+#endif
     }
 
     if (fp != NULL)

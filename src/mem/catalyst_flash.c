@@ -65,7 +65,7 @@ typedef struct flash_t {
     mem_mapping_t mapping_h[2];
 } flash_t;
 
-static char flash_path[1024];
+static char ESP32_BIG_BSS_ATTR flash_path[1024];
 
 static uint8_t
 flash_read(uint32_t addr, void *priv)

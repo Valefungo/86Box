@@ -28,15 +28,15 @@
 #include <86box/vid_cga_comp.h>
 #include <86box/thread.h>
 
-int CGA_Composite_Table[1024];
+int ESP32_BIG_BSS_ATTR CGA_Composite_Table[1024];
 
-static mutex_t* cga_comp_mutex = NULL;
+static mutex_t* ESP32_BIG_BSS_ATTR cga_comp_mutex = NULL;
 
-static double brightness = 0;
+static double ESP32_BIG_BSS_ATTR brightness = 0;
 static double contrast   = 100;
 static double saturation = 100;
-static double sharpness  = 0;
-static double hue_offset = 0;
+static double ESP32_BIG_BSS_ATTR sharpness  = 0;
+static double ESP32_BIG_BSS_ATTR hue_offset = 0;
 
 /* New algorithm by reenigne
    Works in all CGA modes/color settings and can simulate older and newer CGA revisions */
@@ -70,27 +70,27 @@ static double intensity[4] = {
 
 #define NEW_CGA(c, i, r, g, b) (((c) / 0.72) * 0.29 + ((i) / 0.28) * 0.32 + ((r) / 0.28) * 0.1 + ((g) / 0.28) * 0.22 + ((b) / 0.28) * 0.07)
 
-volatile double mode_brightness;
-volatile double mode_contrast;
-volatile double mode_hue;
-volatile double min_v;
-volatile double max_v;
+volatile double ESP32_BIG_BSS_ATTR mode_brightness;
+volatile double ESP32_BIG_BSS_ATTR mode_contrast;
+volatile double ESP32_BIG_BSS_ATTR mode_hue;
+volatile double ESP32_BIG_BSS_ATTR min_v;
+volatile double ESP32_BIG_BSS_ATTR max_v;
 
-volatile double video_ri;
-volatile double video_rq;
-volatile double video_gi;
-volatile double video_gq;
-volatile double video_bi;
-volatile double video_bq;
-volatile int    video_sharpness;
+volatile double ESP32_BIG_BSS_ATTR video_ri;
+volatile double ESP32_BIG_BSS_ATTR video_rq;
+volatile double ESP32_BIG_BSS_ATTR video_gi;
+volatile double ESP32_BIG_BSS_ATTR video_gq;
+volatile double ESP32_BIG_BSS_ATTR video_bi;
+volatile double ESP32_BIG_BSS_ATTR video_bq;
+volatile int    ESP32_BIG_BSS_ATTR video_sharpness;
 
 static bool new_cga = 0;
 
 static uint8_t current_cgamode = 0;
 
-int vid_cga_comp_brightness = 0;
-int vid_cga_comp_sharpness = 0;
-int vid_cga_comp_hue = 0;
+int ESP32_BIG_BSS_ATTR vid_cga_comp_brightness = 0;
+int ESP32_BIG_BSS_ATTR vid_cga_comp_sharpness = 0;
+int ESP32_BIG_BSS_ATTR vid_cga_comp_hue = 0;
 int vid_cga_comp_saturation = 100;
 int vid_cga_comp_contrast = 100;
 
@@ -205,9 +205,9 @@ byte_clamp(int v)
 /* 2048x1536 is the maximum we can possibly support. */
 #define SCALER_MAXWIDTH 2048
 
-static int temp[SCALER_MAXWIDTH + 10] = { 0 };
-static int atemp[SCALER_MAXWIDTH + 2] = { 0 };
-static int btemp[SCALER_MAXWIDTH + 2] = { 0 };
+static int ESP32_BIG_BSS_ATTR temp[SCALER_MAXWIDTH + 10] = { 0 };
+static int ESP32_BIG_BSS_ATTR atemp[SCALER_MAXWIDTH + 2] = { 0 };
+static int ESP32_BIG_BSS_ATTR btemp[SCALER_MAXWIDTH + 2] = { 0 };
 
 uint32_t *
 Composite_Process(uint8_t cgamode, uint8_t border, uint32_t blocks /*, bool doublewidth*/, uint32_t *TempLine)

@@ -165,11 +165,11 @@ typedef struct amstrad_t {
     lpt_t *lpt;
 } amstrad_t;
 
-uint32_t amstrad_latch;
+uint32_t ESP32_BIG_BSS_ATTR amstrad_latch;
 
-static uint8_t key_queue[16];
-static int     key_queue_start = 0;
-static int     key_queue_end   = 0;
+static uint8_t ESP32_BIG_BSS_ATTR key_queue[16];
+static int     ESP32_BIG_BSS_ATTR key_queue_start = 0;
+static int     ESP32_BIG_BSS_ATTR key_queue_end   = 0;
 static uint8_t crtc_mask[32]   = {
     0xff, 0xff, 0xff, 0xff, 0x7f, 0x1f, 0x7f, 0x7f,
     0xf3, 0x1f, 0x7f, 0x1f, 0x3f, 0xff, 0x3f, 0xff,
@@ -1027,10 +1027,10 @@ const device_t vid_1640_device = {
 
 extern int nmi_mask;
 
-static uint32_t blue;
-static uint32_t green;
+static uint32_t ESP32_BIG_BSS_ATTR blue;
+static uint32_t ESP32_BIG_BSS_ATTR green;
 
-static uint32_t lcdcols[256][2][2];
+static uint32_t ESP32_BIG_BSS_ATTR lcdcols[256][2][2];
 
 static void
 ams_inform(amsvid_t *vid)

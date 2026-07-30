@@ -38,7 +38,7 @@
 
 #define IDE_ATAPI_IS_EARLY             id->sc->pad0
 
-rdisk_drive_t rdisk_drives[RDISK_NUM];
+rdisk_drive_t ESP32_BIG_BSS_ATTR rdisk_drives[RDISK_NUM];
 
 // clang-format off
 /*

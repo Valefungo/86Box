@@ -42,8 +42,8 @@
 #include <86box/gdbstub.h>
 #include <86box/plat_unused.h>
 
-int bios_only = 0;
-int machine;
+int ESP32_BIG_BSS_ATTR bios_only = 0;
+int ESP32_BIG_BSS_ATTR machine;
 // int AT, PCI;
 
 #ifdef ENABLE_MACHINE_LOG
@@ -123,7 +123,7 @@ machine_init_ex(int m)
         pci_flags = 0x00000000;
 
         if (machines[m].nvr_device)
-            device_add_params(machines[m].nvr_device, (void *) (uintptr_t) machines[m].nvr_params);
+            device_add_params64(machines[m].nvr_device, machines[m].nvr_params);
     }
 
     /* All good, boot the machine! */

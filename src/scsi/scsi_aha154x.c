@@ -66,12 +66,12 @@ uint16_t aha_ports[] = {
     0x0130, 0x0134, 0x0000, 0x0000
 };
 
-static uint8_t *aha1542cp_pnp_rom = NULL;
+static uint8_t *ESP32_BIG_BSS_ATTR aha1542cp_pnp_rom = NULL;
 
 // static char    *aha1542cp_rev     = "F001";
-static char     aha1542cp_rev[16] = { 0 };
+static char     ESP32_BIG_BSS_ATTR aha1542cp_rev[16] = { 0 };
 
-static uint16_t fw_chksum         = 0x0000;
+static uint16_t ESP32_BIG_BSS_ATTR fw_chksum         = 0x0000;
 
 #pragma pack(push, 1)
 typedef struct aha_setup_t {

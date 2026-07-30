@@ -219,7 +219,7 @@ struct t3100e_ems_regs {
     uint8_t       turbo;  /* 0 for 6MHz, else full speed */
     uint8_t       mono;   /* Emulates PC/AT 'mono' motherboard switch */
     /* Bit 0 is 0 for colour, 1 for mono */
-} t3100e_ems;
+} ESP32_BIG_BSS_ATTR t3100e_ems;
 
 void t3100e_ems_out(uint16_t addr, uint8_t val, void *priv);
 

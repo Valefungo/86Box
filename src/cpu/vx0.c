@@ -338,7 +338,7 @@ vx0_log(const char *fmt, ...)
 #    define vx0_log(fmt, ...)
 #endif
 
-static i8080 emulated_processor;
+static i8080 ESP32_BIG_BSS_ATTR emulated_processor;
 static bool cpu_md_write_disable = 1;
 
 static void
@@ -4720,7 +4720,7 @@ execute_instruction(void)
 
 /* Executes instructions up to the specified number of cycles. */
 void
-execvx0(int cycs)
+execvx0(int32_t cycs)
 {
     cycles += cycs;
 

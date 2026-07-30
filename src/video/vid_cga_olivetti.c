@@ -54,7 +54,7 @@ extern const device_config_t cga_config[]; /* defined in vid_cga.c */
 
 static video_timings_t timing_ogc = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
 
-static uint8_t mdaattr[256][2][2];
+static uint8_t ESP32_BIG_BSS_ATTR mdaattr[256][2][2];
 
 void
 ogc_recalctimings(ogc_t *ogc)

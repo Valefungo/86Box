@@ -337,8 +337,17 @@ ini_detect_bom(const char *fn)
     return 0;
 }
 
-#ifdef __HAIKU__
-/* Local version of fgetws to avoid a crash */
+#if defined(__HAIKU__)
+/* Local version of fgetws to avoid a crash - originally a Haiku-only
+ * workaround, but the same underlying problem (fgetws() not reliably
+ * signalling EOF via feof() the way this file's read loop below
+ * expects) reproduces on ESP-IDF's picolibc too: on real Tab5 hardware
+ * (2026-07-26) this caused an infinite loop in ini_read_ex()'s while(1)
+ * (fgetws() kept "succeeding" on an exhausted stream without feof()
+ * ever becoming true), which pegged the CPU and starved the idle task
+ * until the watchdog killed it. Reusing the exact same fgetwc()-based,
+ * char-at-a-time workaround already proven for Haiku instead of writing
+ * a new one. */
 static wchar_t *
 ini_fgetws(wchar_t *str, int count, FILE *stream)
 {
@@ -362,6 +371,175 @@ ini_fgetws(wchar_t *str, int count, FILE *stream)
 }
 #endif
 
+#ifdef ESP_PLATFORM
+/* Narrow-character equivalent of ini_fgetws() above, same char-at-a-time
+ * EOF-handling logic. 86Box's config files are always plain ASCII in
+ * practice (machine/device names, numbers) - there is no real need for
+ * wide-character parsing here at all, and this target's libc has an
+ * unreliable wide-character conversion path: wcstombs() was observed
+ * (real Tab5 hardware, 2026-07-27) producing a value that failed a
+ * plain strcmp() against the correct string, silently sending
+ * "gfxcard = cga" through 86box.c's "hardware not available" fallback
+ * and replacing it with "none" - a fully correct config file. fwprintf()
+ * writing "%ls" wide strings has the same class of bug in the other
+ * direction: it wrote raw 4-byte-per-character wchar_t values straight
+ * into the config file instead of properly encoded text (visually
+ * confirmed - every character followed by three NUL bytes). Rather than
+ * try to fix this target's wide-character machinery, this entire
+ * read path is reimplemented below using only narrow (char) I/O,
+ * sidestepping the problem instead of working around it piecemeal. */
+static char *
+ini_fgets_safe(char *str, int count, FILE *stream)
+{
+    int i = 0;
+    if (feof(stream))
+        return NULL;
+    for (i = 0; i < count; i++) {
+        int curChar = fgetc(stream);
+        if (curChar == EOF) {
+            if (i + 1 < count)
+                str[i + 1] = 0;
+            return feof(stream) ? str : NULL;
+        }
+        str[i] = (char) curChar;
+        if (curChar == '\n')
+            break;
+    }
+    if (i + 1 < count)
+        str[i + 1] = 0;
+    return str;
+}
+
+/* Read and parse the configuration file into memory, with open type
+ * selection - narrow-character version, see the comment on
+ * ini_fgets_safe() above for why this target has its own copy instead
+ * of sharing the wide-character implementation below. */
+ini_t
+ini_read_ex(const char *fn, int is_rom)
+{
+    char       sname[128];
+    char       ename[128];
+    char       buff[1024];
+    section_t *sec;
+    section_t *ns;
+    entry_t   *ne;
+    int        c;
+    int        d;
+    int        bom;
+    FILE      *fp;
+    list_t    *head;
+
+    bom = ini_detect_bom(fn);
+
+    if (is_rom)
+        fp = rom_fopen(fn, "r");
+    else
+        fp = plat_fopen(fn, "r");
+
+    if (fp == NULL)
+        return NULL;
+
+    head = calloc(1, sizeof(list_t));
+    sec  = calloc(1, sizeof(section_t));
+
+    list_add(&sec->list, head);
+    if (bom)
+        fseek(fp, 3, SEEK_SET);
+
+    while (1) {
+        char *fgets_ret;
+
+        memset(buff, 0x00, sizeof(buff));
+        fgets_ret = ini_fgets_safe(buff, sizeof(buff), fp);
+        if ((fgets_ret == NULL) || feof(fp))
+            break;
+
+        /* Make sure there are no stray newlines or hard-returns in there. */
+        if (strlen(buff) > 0)
+            if (buff[strlen(buff) - 1] == '\n')
+                buff[strlen(buff) - 1] = '\0';
+        if (strlen(buff) > 0)
+            if (buff[strlen(buff) - 1] == '\r')
+                buff[strlen(buff) - 1] = '\0';
+
+        /* Skip any leading whitespace. */
+        c = 0;
+        while ((buff[c] == ' ') || (buff[c] == '\t'))
+            c++;
+
+        /* Skip empty lines. */
+        if (buff[c] == '\0')
+            continue;
+
+        /* Skip lines that (only) have a comment. */
+        if ((buff[c] == '#') || (buff[c] == ';'))
+            continue;
+
+        if (buff[c] == '[') { /* Section */
+            c++;
+            d = 0;
+            while (buff[c] != ']' && buff[c])
+                sname[d++] = buff[c++];
+            sname[d] = '\0';
+
+            /* Is the section name properly terminated? */
+            if (buff[c] != ']')
+                continue;
+
+            /* Create a new section and insert it. */
+            ns = calloc(1, sizeof(section_t));
+            memset(ns, 0x00, sizeof(section_t));
+            memcpy(ns->name, sname, 128);
+            list_add(&ns->list, head);
+
+            /* New section is now the current one. */
+            sec = ns;
+            continue;
+        }
+
+        /* Get the variable name. */
+        d = 0;
+        while ((buff[c] != '=') && (buff[c] != ' ') && buff[c])
+            ename[d++] = buff[c++];
+        ename[d] = '\0';
+
+        /* Skip incomplete lines. */
+        if (buff[c] == '\0')
+            continue;
+
+        /* Look for =, skip whitespace. */
+        while ((buff[c] == '=' || buff[c] == ' ') && buff[c])
+            c++;
+
+        /* Skip incomplete lines. */
+        if (buff[c] == '\0')
+            continue;
+
+        /* This is where the value part starts. */
+        d = c;
+
+        /* Allocate a new variable entry.. */
+        ne = calloc(1, sizeof(entry_t));
+        memset(ne, 0x00, sizeof(entry_t));
+        memcpy(ne->name, ename, 128);
+        strncpy(ne->data, &buff[d], sizeof(ne->data) - 1);
+        ne->data[sizeof(ne->data) - 1] = '\0';
+        /* Keep wdata in sync (some getters read it directly) - a plain
+         * per-character cast is exact for the ASCII range, and config
+         * values are always ASCII in practice, so no real conversion
+         * (and no risk of the buggy library one) is needed here. */
+        for (size_t wi = 0; wi < sizeof_w(ne->wdata) - 1 && ne->data[wi] != '\0'; wi++)
+            ne->wdata[wi] = (wchar_t) (unsigned char) ne->data[wi];
+
+        /* .. and insert it. */
+        list_add(&ne->list, &sec->entry_head);
+    }
+
+    (void) fclose(fp);
+
+    return (ini_t) head;
+}
+#else
 /* Read and parse the configuration file into memory, with open type selection. */
 ini_t
 ini_read_ex(const char *fn, int is_rom)
@@ -404,13 +582,25 @@ ini_read_ex(const char *fn, int is_rom)
         fseek(fp, 3, SEEK_SET);
 
     while (1) {
+        wchar_t *fgetws_ret;
+
         memset(buff, 0x00, sizeof(buff));
-#ifdef __HAIKU__
-        ini_fgetws(buff, sizeof_w(buff), fp);
+#if defined(__HAIKU__) || defined(ESP_PLATFORM)
+        fgetws_ret = ini_fgetws(buff, sizeof_w(buff), fp);
 #else
-        (void) !fgetws(buff, sizeof_w(buff), fp);
+        fgetws_ret = fgetws(buff, sizeof_w(buff), fp);
 #endif
-        if (feof(fp))
+        /* Checking feof(fp) alone is not enough on every platform: on
+         * ESP-IDF's picolibc (2026-07-26, real Tab5 hardware) feof(fp)
+         * never became true on this stream even once the read function
+         * itself had correctly detected exhaustion and returned NULL -
+         * relying solely on feof() here span an infinite loop (each
+         * iteration doing real but unproductive work, fast enough and
+         * uninterrupted enough to starve FreeRTOS's idle task and trip
+         * its watchdog). Whichever read function ran above already
+         * returns NULL on both EOF and error, so honor that directly
+         * instead of trusting feof() as the only signal. */
+        if ((fgetws_ret == NULL) || feof(fp))
             break;
 
         /* Make sure there are no stray newlines or hard-returns in there. */
@@ -498,6 +688,7 @@ ini_read_ex(const char *fn, int is_rom)
 
     return (ini_t) head;
 }
+#endif /* ESP_PLATFORM */
 
 /* Read and parse the configuration file into memory. */
 ini_t
@@ -510,7 +701,9 @@ ini_read(const char *fn)
 void
 ini_write_ex(ini_t ini, const char *fn, int is_rom)
 {
+#ifndef ESP_PLATFORM
     wchar_t    wtemp[512];
+#endif
     list_t    *list = (list_t *) ini;
     section_t *sec;
     FILE      *fp;
@@ -541,22 +734,46 @@ ini_write_ex(ini_t ini, const char *fn, int is_rom)
         entry_t *ent;
 
         if (sec->name[0]) {
+#ifdef ESP_PLATFORM
+            /* This target's libc has an unreliable wide-character stream
+             * conversion path (fwprintf() with a "%ls" wide string was
+             * observed writing raw 4-byte-per-character wchar_t values
+             * straight to the file instead of properly encoded text -
+             * confirmed on real hardware, config.cfg full of NUL-padded
+             * characters). Config values are always plain ASCII
+             * identifiers in practice (machine/card names, numbers) - so
+             * just write the already-available narrow (char) fields
+             * directly with fprintf(), bypassing the wide-character
+             * machinery entirely instead of trying to fix its encoding. */
+            if (fl)
+                fprintf(fp, "\n[%s]\n", sec->name);
+            else
+                fprintf(fp, "[%s]\n", sec->name);
+#else
             mbstowcs(wtemp, sec->name, strlen(sec->name) + 1);
             if (fl)
                 fwprintf(fp, L"\n[%ls]\n", wtemp);
             else
                 fwprintf(fp, L"[%ls]\n", wtemp);
+#endif
             fl++;
         }
 
         ent = (entry_t *) sec->entry_head.next;
         while (ent != NULL) {
             if (ent->name[0] != '\0') {
+#ifdef ESP_PLATFORM
+                if (ent->data[0] == '\0')
+                    fprintf(fp, "%s = \n", ent->name);
+                else
+                    fprintf(fp, "%s = %s\n", ent->name, ent->data);
+#else
                 mbstowcs(wtemp, ent->name, 128);
                 if (ent->wdata[0] == L'\0')
                     fwprintf(fp, L"%ls = \n", wtemp);
                 else
                     fwprintf(fp, L"%ls = %ls\n", wtemp, ent->wdata);
+#endif
                 fl++;
             }
 

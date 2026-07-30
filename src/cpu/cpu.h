@@ -573,6 +573,7 @@ extern uint32_t olddslimitw;
 extern uint32_t oldsslimitw;
 extern uint32_t pccache;
 extern uint8_t *pccache2;
+extern uint8_t *pccache_exec_ptr;
 
 extern double   bus_timing;
 extern double   isa_timing;

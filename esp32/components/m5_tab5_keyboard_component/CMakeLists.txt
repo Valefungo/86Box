@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS
+        "src/m5_tab5_keyboard.cpp"
+    INCLUDE_DIRS
+        "src"
+    REQUIRES
+        "esp_driver_gpio"
+        "esp_driver_i2c"
+        "i2c_bus"
+)

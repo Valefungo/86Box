@@ -135,12 +135,12 @@ vl82c113_init(UNUSED(const device_t *info))
     vl82c113_t *dev  = (vl82c113_t *) calloc(1, sizeof(vl82c113_t));
 
     if (machines[machine].init == machine_at_martin_init)
-        dev->nvr         = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_MARTIN);
+        dev->nvr         = device_add_params64(&nvr_at_device, NVR_MARTIN);
     else if ((machines[machine].init == machine_at_monsoon_init) || (machines[machine].init == machine_at_sensation1_init) ||
              (machines[machine].init == machine_at_sensation2_init))
-        dev->nvr         = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_AT);
+        dev->nvr         = device_add_params64(&nvr_at_device, NVR_AT);
     else
-        dev->nvr         = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_AT_ZERO_DEFAULT);
+        dev->nvr         = device_add_params64(&nvr_at_device, NVR_AT_ZERO_DEFAULT);
 
     dev->nvr_enabled = 1;
     dev->nvr_base    = 0x0070;

@@ -44,18 +44,18 @@ void ega_doblit(int wx, int wy, ega_t *ega);
 #define BIOS_TSENG_PATH  "roms/video/ega/EGA ET2000.BIN"
 
 static video_timings_t timing_ega = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
-static uint8_t         ega_rotate[8][256];
-static int             active             = 0;
-uint32_t               pallook16[256];
-uint32_t               pallook64[256];
-static int             ega_type           = EGA_TYPE_IBM;
-static int             old_overscan_color = 0;
+static uint8_t         ESP32_BIG_BSS_ATTR ega_rotate[8][256];
+static int             ESP32_BIG_BSS_ATTR active             = 0;
+uint32_t               ESP32_BIG_BSS_ATTR pallook16[256];
+uint32_t               ESP32_BIG_BSS_ATTR pallook64[256];
+static int             ESP32_BIG_BSS_ATTR ega_type           = EGA_TYPE_IBM;
+static int             ESP32_BIG_BSS_ATTR old_overscan_color = 0;
 
 /* 3C2 controls default mode on EGA. On VGA, it determines monitor type (mono or colour):
     7=CGA mode (200 lines), 9=EGA mode (350 lines), 8=EGA mode (200 lines). */
-int egaswitchread;
+int ESP32_BIG_BSS_ATTR egaswitchread;
 int egaswitches     = 9;
-int update_overscan = 0;
+int ESP32_BIG_BSS_ATTR update_overscan = 0;
 
 uint8_t ega_in(uint16_t addr, void *priv);
 
@@ -1095,9 +1095,11 @@ ega_doblit(int wx, int wy, ega_t *ega)
         xsize = xs_temp;
         ysize = ys_temp;
 
-        if ((xsize > 1984) || (ysize > 2016)) {
-            /* 2048x2048 is the biggest safe render texture, to account for overscan,
-               we suppress overscan starting from x 1984 and y 2016. */
+        if ((xsize > 960) || (ysize > 992)) {
+            /* 1024x1024 is the biggest safe render texture on this build, to
+               account for overscan, we suppress overscan starting from
+               x 960 and y 992 (same 64/32px margins as the original 2048
+               cap, just off the smaller base). */
             x_add             = 0;
             y_add             = 0;
             suppress_overscan = 1;

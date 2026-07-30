@@ -73,11 +73,11 @@
 #define VID_CLOCK (double) (651 * 416 * 60)
 
 /* Mapping of attributes to colours */
-static uint32_t amber;
-static uint32_t black;
-static uint8_t  boldcols[256]; /* Which attributes use the bold font */
-static uint32_t blinkcols[256][2];
-static uint32_t normcols[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR amber;
+static uint32_t ESP32_BIG_BSS_ATTR black;
+static uint8_t  ESP32_BIG_BSS_ATTR boldcols[256]; /* Which attributes use the bold font */
+static uint32_t ESP32_BIG_BSS_ATTR blinkcols[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR normcols[256][2];
 
 /* Video options set by the motherboard; they will be picked up by the card
  * on the next poll.

@@ -148,9 +148,9 @@ typedef struct atkbc_t {
 } atkbc_t;
 
 /* Keyboard controller ports. */
-kbc_at_port_t  *kbc_at_ports[2] = { NULL, NULL };
+kbc_at_port_t  *ESP32_BIG_BSS_ATTR kbc_at_ports[2] = { NULL, NULL };
 
-static void (*kbc_at_do_poll)(atkbc_t *dev);
+static void (*ESP32_BIG_BSS_ATTR kbc_at_do_poll)(atkbc_t *dev);
 
 /* Non-translated to translated scan codes. */
 static const uint8_t nont_to_t[256] = {

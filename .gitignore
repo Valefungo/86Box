@@ -68,3 +68,10 @@ CMakeLists.txt.user
 
 # Jetbrains CLion
 .idea
+
+# ESP32 port (esp32-port branch)
+/esp32/build/
+/esp32/managed_components/
+/esp32/sdkconfig.old
+# Test ROMs/NVR state (real BIOS dumps - copyright, plus ~1.1GB) - never push
+/esp32/sdcard/

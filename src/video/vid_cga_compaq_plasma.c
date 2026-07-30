@@ -45,10 +45,10 @@ static video_timings_t timing_compaq_plasma = { .type = VIDEO_ISA, .write_b = 8,
 #define VID_CLOCK (double) (651 * 416 * 60)
 
 /* Mapping of attributes to colours */
-static uint32_t amber;
-static uint32_t black;
-static uint32_t blinkcols[256][2];
-static uint32_t normcols[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR amber;
+static uint32_t ESP32_BIG_BSS_ATTR black;
+static uint32_t ESP32_BIG_BSS_ATTR blinkcols[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR normcols[256][2];
 
 /* Video options set by the motherboard; they will be picked up by the card
  * on the next poll.
@@ -59,7 +59,7 @@ static uint32_t normcols[256][2];
  */
 static int8_t cpq_st_display_internal = -1;
 
-static uint8_t mdaattr[256][2][2];
+static uint8_t ESP32_BIG_BSS_ATTR mdaattr[256][2][2];
 
 static void
 compaq_plasma_display_set(uint8_t internal)

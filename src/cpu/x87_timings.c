@@ -7,8 +7,8 @@
 #include <86box/machine.h>
 #include "x87_timings.h"
 
-x87_timings_t x87_timings;
-x87_timings_t x87_concurrency;
+x87_timings_t ESP32_BIG_BSS_ATTR x87_timings;
+x87_timings_t ESP32_BIG_BSS_ATTR x87_concurrency;
 
 const x87_timings_t x87_timings_8087 = {
     .f2xm1      = (310 + 630) / 2,

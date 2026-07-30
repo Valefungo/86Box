@@ -24,7 +24,7 @@
 #include <86box/network.h>
 #include <86box/machine_status.h>
 
-machine_status_t machine_status;
+machine_status_t ESP32_BIG_BSS_ATTR machine_status;
 
 void
 machine_status_init(void)

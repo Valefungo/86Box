@@ -67,7 +67,7 @@ sensation_log(void *priv, const char *fmt, ...)
 #    define sensation_log(fmt, ...)
 #endif
 
-static int visdac_vols_6bits[64];
+static int ESP32_BIG_BSS_ATTR visdac_vols_6bits[64];
 
 typedef struct sensation_t {
     int mma_irq;

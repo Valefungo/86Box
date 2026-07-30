@@ -37,6 +37,20 @@
 #include <86box/mem.h>
 #include <86box/plat.h>
 #include <86box/rom.h>
+
+#ifdef ESP_PLATFORM
+/* _mem_state[]/_mem_wp[]/_mem_wp_bus[] (~10MB, see mem.h's MEM_COMPACT_TABLES
+ * comment) are real state kept at full size even under MEM_COMPACT_TABLES -
+ * too large for this target's internal SRAM. EXT_RAM_BSS_ATTR places them
+ * in PSRAM instead (the automatic BSS-to-PSRAM linker mechanism doesn't
+ * reach plain .bss on this ESP-IDF/ESP32-P4 combination, only symbols
+ * explicitly tagged into .ext_ram.bss). */
+#include <esp_attr.h>
+#include <esp_heap_caps.h>
+#define MEM_BIG_TABLE_ATTR EXT_RAM_BSS_ATTR
+#else
+#define MEM_BIG_TABLE_ATTR
+#endif
 #include <86box/gdbstub.h>
 #ifdef USE_DYNAREC
 #    include "codegen_public.h"
@@ -55,21 +69,21 @@
 #    define BLOCK_INVALID    0
 #endif
 
-mem_mapping_t ram_low_mapping;       /* 0..640K mapping */
-mem_mapping_t ram_mid_mapping;       /* 640..1024K mapping */
-mem_mapping_t ram_mid_mapping2;      /* 640..1024K mapping, second part, for SiS 471 in relocate mode  */
-mem_mapping_t ram_remapped_mapping;  /* 640..1024K mapping */
-mem_mapping_t ram_remapped_mapping2; /* 640..1024K second mapping, for SiS 471 mode */
-mem_mapping_t ram_high_mapping;      /* 1024K+ mapping */
-mem_mapping_t ram_split_mapping;
-mem_mapping_t bios_mapping;
-mem_mapping_t bios_high_mapping;
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_low_mapping;       /* 0..640K mapping */
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_mid_mapping;       /* 640..1024K mapping */
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_mid_mapping2;      /* 640..1024K mapping, second part, for SiS 471 in relocate mode  */
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_remapped_mapping;  /* 640..1024K mapping */
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_remapped_mapping2; /* 640..1024K second mapping, for SiS 471 mode */
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_high_mapping;      /* 1024K+ mapping */
+mem_mapping_t MEM_BIG_TABLE_ATTR ram_split_mapping;
+mem_mapping_t MEM_BIG_TABLE_ATTR bios_mapping;
+mem_mapping_t MEM_BIG_TABLE_ATTR bios_high_mapping;
 
 page_t  *pages;       /* RAM page table */
 uint32_t pages_sz;    /* #pages in table */
 
 uint8_t *ram;  /* the virtual RAM */
-uint8_t  page_ff[4096];
+uint8_t  MEM_BIG_TABLE_ATTR page_ff[4096];
 uint32_t rammask;
 uint32_t addr_space_size;
 
@@ -79,6 +93,7 @@ uint32_t biosaddr;
 
 uint32_t pccache;
 uint8_t *pccache2;
+uint8_t *pccache_exec_ptr;
 
 int        readlnext;
 int        readlookup[256];
@@ -87,10 +102,19 @@ uint8_t    uncached = 0;
 int        writelnext;
 int        writelookup[256];
 
-/* The lookup tables. */
+/* The lookup tables. See the MEM_COMPACT_TABLES comment in mem.h. */
+#ifdef MEM_COMPACT_TABLES
+page_t   *page_lookup[MEM_TLB_SIZE]     = { 0 };
+uintptr_t readlookup2[MEM_TLB_SIZE]     = { 0 };
+uintptr_t writelookup2[MEM_TLB_SIZE]    = { 0 };
+uint32_t  page_lookup_tag[MEM_TLB_SIZE] = { 0 };
+uint32_t  readlookup2_tag[MEM_TLB_SIZE] = { 0 };
+uint32_t  writelookup2_tag[MEM_TLB_SIZE] = { 0 };
+#else
 page_t *page_lookup[1048576] = { 0 };
 uintptr_t readlookup2[1048576] = { 0 };
 uintptr_t writelookup2[1048576] = { 0 };
+#endif
 
 
 uint32_t mem_logical_addr;
@@ -121,19 +145,146 @@ int      purgeable_page_count    = 0;
 
 uint8_t high_page = 0; /* if a high (> 4 gb) page was detected */
 
+#ifndef MEM_COMPACT_TABLES
 mem_mapping_t        *read_mapping[MEM_MAPPINGS_NO];
 mem_mapping_t        *write_mapping[MEM_MAPPINGS_NO];
+#endif
 
+#ifdef MEM_COMPACT_TABLES
+uint8_t              *_mem_exec[MEM_TLB_SIZE];
+uint32_t              _mem_exec_tag[MEM_TLB_SIZE];
+#else
 uint8_t              *_mem_exec[MEM_MAPPINGS_NO];
+#endif
 
 static mem_mapping_t *base_mapping;
 static mem_mapping_t *last_mapping;
+#ifndef MEM_COMPACT_TABLES
 static mem_mapping_t *read_mapping_bus[MEM_MAPPINGS_NO];
 static mem_mapping_t *write_mapping_bus[MEM_MAPPINGS_NO];
-static uint8_t       _mem_wp[MEM_MAPPINGS_NO];
-static uint8_t       _mem_wp_bus[MEM_MAPPINGS_NO];
-static uint8_t        ff_pccache[4] = { 0xff, 0xff, 0xff, 0xff };
-static mem_state_t    _mem_state[MEM_MAPPINGS_NO];
+#endif
+#ifdef MEM_COMPACT_TABLES
+/* Hybrid replacement for the ~10MB flat _mem_wp[]/_mem_wp_bus[]/
+ * _mem_state[] (see the ESP_PLATFORM comment above `mem.c`'s inclusion
+ * of esp_attr.h): unlike read_mapping[]/write_mapping[]/_mem_exec[],
+ * these three are real state (written by mem_set_wp()/mem_set_access(),
+ * not derived), so they can't be replaced by an on-demand resolver -
+ * but every real caller in the codebase, verified by reading each one
+ * rather than assumed, only ever touches two disjoint ranges:
+ *
+ *   - [0, 128MB): wd76c10.c (up to 16MB), sis_85c4xx.c
+ *     (mem_set_mem_state_both(1<<20, 127<<20, ...) - exactly [1MB,
+ *     128MB)), and TSEG-style ranges that scale with configured RAM
+ *     (harmless, always within actual guest RAM).
+ *   - the literal last 1MB of the 4GB space, [0xfff00000, 0x100000000):
+ *     rom.c's bios_add() BIOS-shadow-at-top-of-4GB trick for any
+ *     32-bit-bus CPU (386DX/486/etc.) - `biosaddr | 0xfff00000` always
+ *     lands here since 0xfff00000's low 20 bits are zero and biosaddr
+ *     never exceeds 20 bits.
+ *
+ * intel_4x0.c's ~257MB SMRAM/TSEG alias - the other high address this
+ * project's plan once worried about - was checked and confirmed dead
+ * for our kept chipsets: that branch is gated on `dev->type ==
+ * INTEL_430TX || dev->type >= INTEL_440BX` (Pentium-class, not kept),
+ * so INTEL_420TX/420ZX (the 486-era chipsets actually kept) always
+ * fall through to the low legacy SMRAM window (0xa0000), already
+ * inside the dense range below.
+ *
+ * A page outside BOTH ranges was never a real case as of this
+ * writing, but the lookup functions below still handle it safely
+ * (return NULL / a neutral zero state) rather than assuming the
+ * caller list above stays complete forever - see mem_state_lookup()/
+ * mem_wp_lookup()/mem_wp_bus_lookup(). */
+/* 256MB, not 128MB: a full sweep of every mem_set_mem_state()/
+ * mem_set_access() caller across every kept, compiled file (not just
+ * the two originally checked) found machine_table.c's own highest
+ * `.ram.max` is 262144 (256MB) - some kept machine can genuinely
+ * configure that much guest RAM, and several chipsets (headland.c,
+ * scat.c, etc.) scale a mem_set_mem_state() call with `mem_size`
+ * directly, so the dense floor must cover the highest configurable
+ * RAM, not just the specific fixed addresses found in a first pass. */
+#define MEM_STATE_DENSE_LIMIT      0x10000000U /* 256MB */
+#define MEM_STATE_DENSE_PAGES      (MEM_STATE_DENSE_LIMIT >> MEM_GRANULARITY_BITS)
+#define MEM_STATE_HIGH_BASE_PAGE   (0xfff00000U >> MEM_GRANULARITY_BITS)
+#define MEM_STATE_HIGH_PAGES       ((0x100000000ULL - 0xfff00000U) >> MEM_GRANULARITY_BITS)
+/* src/chipset/compaq_386.c: a single fixed 4KB diagnostic-register page
+ * at 0x80c00000 (~2.06GB) - found during the same sweep, a genuinely
+ * reachable third address region outside both the dense floor and the
+ * BIOS-alias exception above. */
+#define MEM_STATE_COMPAQ_PAGE      (0x80c00000U >> MEM_GRANULARITY_BITS)
+
+static uint8_t     MEM_BIG_TABLE_ATTR _mem_wp_dense[MEM_STATE_DENSE_PAGES];
+static uint8_t     MEM_BIG_TABLE_ATTR _mem_wp_bus_dense[MEM_STATE_DENSE_PAGES];
+static mem_state_t MEM_BIG_TABLE_ATTR _mem_state_dense[MEM_STATE_DENSE_PAGES];
+
+static uint8_t     MEM_BIG_TABLE_ATTR _mem_wp_compaq;
+static uint8_t     MEM_BIG_TABLE_ATTR _mem_wp_bus_compaq;
+static mem_state_t MEM_BIG_TABLE_ATTR _mem_state_compaq;
+
+static uint8_t     MEM_BIG_TABLE_ATTR _mem_wp_high[MEM_STATE_HIGH_PAGES];
+static uint8_t     MEM_BIG_TABLE_ATTR _mem_wp_bus_high[MEM_STATE_HIGH_PAGES];
+static mem_state_t MEM_BIG_TABLE_ATTR _mem_state_high[MEM_STATE_HIGH_PAGES];
+
+/* NULL means "outside both tracked ranges" - callers must use the same
+ * neutral defaults an untouched entry in the original full-size array
+ * would have had (0 for wp/wp_bus, an all-zero mem_state_t). */
+static inline mem_state_t *
+mem_state_lookup(uint32_t page_num)
+{
+    if (page_num < MEM_STATE_DENSE_PAGES)
+        return &_mem_state_dense[page_num];
+    if ((page_num >= MEM_STATE_HIGH_BASE_PAGE) && (page_num < (MEM_STATE_HIGH_BASE_PAGE + MEM_STATE_HIGH_PAGES)))
+        return &_mem_state_high[page_num - MEM_STATE_HIGH_BASE_PAGE];
+    if (page_num == MEM_STATE_COMPAQ_PAGE)
+        return &_mem_state_compaq;
+    return NULL;
+}
+
+static inline uint8_t *
+mem_wp_lookup(uint32_t page_num)
+{
+    if (page_num < MEM_STATE_DENSE_PAGES)
+        return &_mem_wp_dense[page_num];
+    if ((page_num >= MEM_STATE_HIGH_BASE_PAGE) && (page_num < (MEM_STATE_HIGH_BASE_PAGE + MEM_STATE_HIGH_PAGES)))
+        return &_mem_wp_high[page_num - MEM_STATE_HIGH_BASE_PAGE];
+    if (page_num == MEM_STATE_COMPAQ_PAGE)
+        return &_mem_wp_compaq;
+    return NULL;
+}
+
+static inline uint8_t *
+mem_wp_bus_lookup(uint32_t page_num)
+{
+    if (page_num < MEM_STATE_DENSE_PAGES)
+        return &_mem_wp_bus_dense[page_num];
+    if ((page_num >= MEM_STATE_HIGH_BASE_PAGE) && (page_num < (MEM_STATE_HIGH_BASE_PAGE + MEM_STATE_HIGH_PAGES)))
+        return &_mem_wp_bus_high[page_num - MEM_STATE_HIGH_BASE_PAGE];
+    if (page_num == MEM_STATE_COMPAQ_PAGE)
+        return &_mem_wp_bus_compaq;
+    return NULL;
+}
+#else
+static uint8_t MEM_BIG_TABLE_ATTR      _mem_wp[MEM_MAPPINGS_NO];
+static uint8_t MEM_BIG_TABLE_ATTR      _mem_wp_bus[MEM_MAPPINGS_NO];
+static mem_state_t MEM_BIG_TABLE_ATTR    _mem_state[MEM_MAPPINGS_NO];
+#endif
+/* getpccache()'s fallback for a page with no exec-capable mapping at all
+ * (e.g. an option-ROM shadow window set to "external" with no actual ROM
+ * image backing it). Every other getpccache() return path hands back a
+ * pointer pre-biased backward by the page base, because callers always
+ * index the result with the FULL untruncated address (pccache2[a], not
+ * pccache2[a & 0xfff] - see fastreadb/fastreadw/fastreadl/_fetch in
+ * 386_common.h). This buffer must be a full page (not 4 bytes) so that
+ * bias-then-index (ff_pccache_page - pagebase(a), then [a]) always lands
+ * within [0, MEM_GRANULARITY_SIZE) regardless of a's low 12 bits - a bare
+ * 4-byte buffer indexed the same way reads far out of bounds (confirmed on
+ * real ESP32 hardware: a "Load access fault" reading ~967KB past this
+ * array, landing in unmapped LP memory; on a 64-bit desktop host the same
+ * out-of-bounds read silently lands in some other mapped page instead of
+ * faulting, which is why this was never noticed there). Filled with 0xFF
+ * to keep the intended "unpopulated bus" emulation. */
+static uint8_t MEM_BIG_TABLE_ATTR ff_pccache_page[MEM_GRANULARITY_SIZE];
+static int                        ff_pccache_page_init = 0;
 static uint32_t       remap_start_addr;
 static uint32_t       remap_start_addr2;
 static size_t ram_size = 0;
@@ -159,7 +310,7 @@ mem_log(const char *fmt, ...)
 int
 mem_addr_is_ram(uint32_t addr)
 {
-    const mem_mapping_t *mapping = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    const mem_mapping_t *mapping = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     return (mapping == &ram_low_mapping) || (mapping == &ram_high_mapping) || (mapping == &ram_mid_mapping) ||
            (mapping == &ram_mid_mapping2) || (mapping == &ram_remapped_mapping);
@@ -168,6 +319,27 @@ mem_addr_is_ram(uint32_t addr)
 void
 resetreadlookup(void)
 {
+#ifdef MEM_COMPACT_TABLES
+    /* Initialize the page lookup table. */
+    memset(page_lookup, 0x00, MEM_TLB_SIZE * sizeof(page_t *));
+
+    /* Initialize the tables for lower (<= 1024K) RAM. */
+    for (uint16_t c = 0; c < 256; c++) {
+        readlookup[c]  = 0xffffffff;
+        writelookup[c] = 0xffffffff;
+    }
+
+    /* Initialize the tables for high (> 1024K) RAM. */
+    memset(readlookup2, 0xff, MEM_TLB_SIZE * sizeof(uintptr_t));
+    memset(writelookup2, 0xff, MEM_TLB_SIZE * sizeof(uintptr_t));
+
+    /* Tags start at an impossible page number (no real address shifts to
+     * this), so an untouched slot can never look like a spurious hit for
+     * page 0 (which would otherwise alias with a zero-initialized tag). */
+    memset(page_lookup_tag, 0xff, MEM_TLB_SIZE * sizeof(uint32_t));
+    memset(readlookup2_tag, 0xff, MEM_TLB_SIZE * sizeof(uint32_t));
+    memset(writelookup2_tag, 0xff, MEM_TLB_SIZE * sizeof(uint32_t));
+#else
     /* Initialize the page lookup table. */
     memset(page_lookup, 0x00, (1 << 20) * sizeof(page_t *));
 
@@ -181,6 +353,7 @@ resetreadlookup(void)
     memset(readlookup2, 0xff, (1 << 20) * sizeof(uintptr_t));
 
     memset(writelookup2, 0xff, (1 << 20) * sizeof(uintptr_t));
+#endif
 
     readlnext  = 0;
     writelnext = 0;
@@ -193,12 +366,12 @@ flushmmucache(void)
 {
     for (uint16_t c = 0; c < 256; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
-            readlookup2[readlookup[c]] = LOOKUP_INV;
+            READLOOKUP2_INVALIDATE(readlookup[c]);
             readlookup[c]              = 0xffffffff;
         }
         if (writelookup[c] != (int) 0xffffffff) {
-            page_lookup[writelookup[c]]  = NULL;
-            writelookup2[writelookup[c]] = LOOKUP_INV;
+            PAGE_LOOKUP_INVALIDATE(writelookup[c]);
+            WRITELOOKUP2_INVALIDATE(writelookup[c]);
             writelookup[c]               = 0xffffffff;
         }
     }
@@ -217,8 +390,8 @@ flushmmucache_write(void)
 {
     for (uint16_t c = 0; c < 256; c++) {
         if (writelookup[c] != (int) 0xffffffff) {
-            page_lookup[writelookup[c]]  = NULL;
-            writelookup2[writelookup[c]] = LOOKUP_INV;
+            PAGE_LOOKUP_INVALIDATE(writelookup[c]);
+            WRITELOOKUP2_INVALIDATE(writelookup[c]);
             writelookup[c]               = 0xffffffff;
         }
     }
@@ -243,12 +416,12 @@ flushmmucache_nopc(void)
 {
     for (uint16_t c = 0; c < 256; c++) {
         if (readlookup[c] != (int) 0xffffffff) {
-            readlookup2[readlookup[c]] = LOOKUP_INV;
+            READLOOKUP2_INVALIDATE(readlookup[c]);
             readlookup[c]              = 0xffffffff;
         }
         if (writelookup[c] != (int) 0xffffffff) {
-            page_lookup[writelookup[c]]  = NULL;
-            writelookup2[writelookup[c]] = LOOKUP_INV;
+            PAGE_LOOKUP_INVALIDATE(writelookup[c]);
+            WRITELOOKUP2_INVALIDATE(writelookup[c]);
             writelookup[c]               = 0xffffffff;
         }
     }
@@ -261,10 +434,10 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
 
     for (uint16_t c = 0; c < 256; c++) {
         if (writelookup[c] != (int) 0xffffffff) {
-            uintptr_t target = (uintptr_t) &ram[(uintptr_t) (addr & ~0xfff) - (virt & ~0xfff)];
-            if (writelookup2[writelookup[c]] == target || page_lookup[writelookup[c]] == page_target) {
-                writelookup2[writelookup[c]] = LOOKUP_INV;
-                page_lookup[writelookup[c]]  = NULL;
+            uintptr_t target = MEM_PTR_FIXUP(&ram[(uintptr_t) (addr & ~0xfff) - (virt & ~0xfff)]);
+            if (WRITELOOKUP2_GET(writelookup[c]) == target || PAGE_LOOKUP_GET(writelookup[c]) == page_target) {
+                WRITELOOKUP2_INVALIDATE(writelookup[c]);
+                PAGE_LOOKUP_INVALIDATE(writelookup[c]);
                 writelookup[c]               = 0xffffffff;
             }
         }
@@ -273,8 +446,8 @@ mem_flush_write_page(uint32_t addr, uint32_t virt)
 
 #define mmutranslate_read(addr)  mmutranslatereal(addr, 0)
 #define mmutranslate_write(addr) mmutranslatereal(addr, 1)
-#define rammap(x)                ((uint32_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 2) & MEM_GRANULARITY_QMASK]
-#define rammap64(x)              ((uint64_t *) (_mem_exec[(x) >> MEM_GRANULARITY_BITS]))[((x) >> 3) & MEM_GRANULARITY_PMASK]
+#define rammap(x)                ((uint32_t *) (MEM_EXEC_LOOKUP((x) >> MEM_GRANULARITY_BITS)))[((x) >> 2) & MEM_GRANULARITY_QMASK]
+#define rammap64(x)              ((uint64_t *) (MEM_EXEC_LOOKUP((x) >> MEM_GRANULARITY_BITS)))[((x) >> 3) & MEM_GRANULARITY_PMASK]
 
 static __inline uint64_t
 mmutranslatereal_normal(uint32_t addr, int rw)
@@ -573,16 +746,16 @@ addreadlookup(uint32_t virt, uint32_t phys)
     if (virt == 0xffffffff)
         return;
 
-    if (readlookup2[virt >> 12] != (uintptr_t) LOOKUP_INV)
+    if (READLOOKUP2_GET(virt >> 12) != (uintptr_t) LOOKUP_INV)
         return;
 
     if (readlookup[readlnext] != (int) 0xffffffff) {
         if ((readlookup[readlnext] == ((es + DI) >> 12)) || (readlookup[readlnext] == ((es + EDI) >> 12)))
             uncached = 1;
-        readlookup2[readlookup[readlnext]] = LOOKUP_INV;
+        READLOOKUP2_INVALIDATE(readlookup[readlnext]);
     }
 
-    readlookup2[virt >> 12] = (uintptr_t) &ram[(uintptr_t) (phys & ~0xFFF) - (uintptr_t) (virt & ~0xfff)];
+    READLOOKUP2_SET(virt >> 12, MEM_PTR_FIXUP(&ram[(uintptr_t) (phys & ~0xFFF) - (uintptr_t) (virt & ~0xfff)]));
 
     readlookup[readlnext++] = virt >> 12;
     readlnext &= (cachesize - 1);
@@ -598,12 +771,12 @@ addwritelookup(uint32_t virt, uint32_t phys)
     if (virt == 0xffffffff)
         return;
 
-    if (page_lookup[virt >> 12])
+    if (PAGE_LOOKUP_GET(virt >> 12))
         return;
 
     if (writelookup[writelnext] != -1) {
-        page_lookup[writelookup[writelnext]]  = NULL;
-        writelookup2[writelookup[writelnext]] = LOOKUP_INV;
+        PAGE_LOOKUP_INVALIDATE(writelookup[writelnext]);
+        WRITELOOKUP2_INVALIDATE(writelookup[writelnext]);
     }
 
 #ifdef USE_NEW_DYNAREC
@@ -619,10 +792,10 @@ addwritelookup(uint32_t virt, uint32_t phys)
     if (pages[phys >> 12].block[0] || pages[phys >> 12].block[1] || pages[phys >> 12].block[2] || pages[phys >> 12].block[3]) {
 #    endif
 #endif
-        page_lookup[virt >> 12]  = &pages[phys >> 12];
+        PAGE_LOOKUP_SET(virt >> 12, &pages[phys >> 12]);
     } else {
 
-        writelookup2[virt >> 12] = (uintptr_t) &ram[(uintptr_t) (phys & ~0xFFF) - (uintptr_t) (virt & ~0xfff)];
+        WRITELOOKUP2_SET(virt >> 12, MEM_PTR_FIXUP(&ram[(uintptr_t) (phys & ~0xFFF) - (uintptr_t) (virt & ~0xfff)]));
     }
 
     writelookup[writelnext++] = virt >> 12;
@@ -649,21 +822,73 @@ getpccache(uint32_t a)
     }
     a64 &= rammask;
 
-    if (_mem_exec[a64 >> MEM_GRANULARITY_BITS]) {
+    uint8_t *exec_ptr = MEM_EXEC_LOOKUP(a64 >> MEM_GRANULARITY_BITS);
+    pccache_exec_ptr  = exec_ptr;
+    if (exec_ptr) {
         if (is286) {
-            if (read_mapping[a64 >> MEM_GRANULARITY_BITS] && (read_mapping[a64 >> MEM_GRANULARITY_BITS]->flags & MEM_MAPPING_ROM_WS))
+            mem_mapping_t *rmap = READ_MAPPING(a64 >> MEM_GRANULARITY_BITS);
+            if (rmap && (rmap->flags & MEM_MAPPING_ROM_WS))
                 cpu_prefetch_cycles = cpu_rom_prefetch_cycles;
             else
                 cpu_prefetch_cycles = cpu_mem_prefetch_cycles;
         }
 
-        p = &_mem_exec[a64 >> MEM_GRANULARITY_BITS][(uintptr_t) (a64 & MEM_GRANULARITY_PAGE) - (uintptr_t) (a2 & ~0xfff)];
-        return (uint8_t *) (((uintptr_t) p & 0x00000000ffffffffULL) | ((uintptr_t) &_mem_exec[a64 >> MEM_GRANULARITY_BITS][0] & 0xffffffff00000000ULL));
+        p = &exec_ptr[(uintptr_t) (a64 & MEM_GRANULARITY_PAGE) - (uintptr_t) (a2 & ~0xfff)];
+        {
+            uint8_t *recombined = (uint8_t *) PTR_RECOMBINE(p, &exec_ptr[0]);
+#ifdef CLAUDE_LOG
+            /* Sanity-check: if this page is backed by plain RAM (a64 within
+             * rammask), the pointer this function hands back for index a2
+             * (i.e. recombined + (a2 & 0xfff)) must land inside the real
+             * ram[]..ram[rammask] buffer. If it doesn't, the exec-cache
+             * pointer arithmetic computed something that points outside any
+             * real allocation - which is exactly the "Load access fault"
+             * seen on real hardware. */
+            /* rammask is the address-bus mask (often all-1s for a full
+             * 32-bit bus), NOT the real populated RAM size - use mem_size
+             * (in KB) for the actual ram[] buffer bound to avoid a false
+             * "OOB" on every call (ram+rammask+1 also silently wraps back
+             * to ram on a 32-bit host when rammask is 0xffffffff). */
+            /* Confirmed on the desktop build (2026-07-29): capping at
+             * mem_size alone floods this with false positives for any
+             * address in the 0xa0000-0xfffff BIOS/option-ROM shadow
+             * candidate range - that window can be legitimately backed by
+             * a separate ROM buffer (not ram[]) whenever shadowing isn't
+             * currently enabled for that specific chunk, and this check
+             * has no way to tell "correctly ROM-backed" from "genuinely
+             * wrong pointer" there. Narrow to conventional memory below
+             * 640K, which is never ROM/shadow-ambiguous in any kept
+             * machine, to keep this diagnostic meaningful. */
+            if (a64 < 0xa0000ULL) {
+                /* Callers index this returned pointer as pccache2[a] using
+                 * the FULL address a (not just its low 12 bits) - mirror
+                 * that exactly here rather than re-deriving the offset. */
+                uint8_t *final_ptr = recombined + a;
+                uint8_t *ram_lo    = ram;
+                uint8_t *ram_hi    = ram + (mem_size << 10);
+                if ((final_ptr < ram_lo) || (final_ptr >= ram_hi))
+                    pclog("# getpccache OOB: a=%08X a2=%08X a64=%08X%08X exec_ptr=%p p=%p recombined=%p "
+                          "final_ptr(a)=%p ram=%p ram_hi=%p rammask=%08X\n",
+                          a, a2, (uint32_t) (a64 >> 32), (uint32_t) (a64 & 0xffffffffULL),
+                          (void *) exec_ptr, (void *) p, (void *) recombined,
+                          (void *) final_ptr, (void *) ram_lo, (void *) ram_hi, rammask);
+            }
+#endif
+            return recombined;
+        }
     }
 
     mem_log("Bad getpccache %08X%08X\n", (uint32_t) (a64 >> 32), (uint32_t) (a64 & 0xffffffffULL));
 
-    return (uint8_t *) &ff_pccache;
+    if (!ff_pccache_page_init) {
+        memset(ff_pccache_page, 0xff, sizeof(ff_pccache_page));
+        ff_pccache_page_init = 1;
+    }
+
+    /* Bias backward by a's own page base, matching every other return path,
+     * so pccache2[a] (indexed with the full address) lands back at
+     * ff_pccache_page[a & 0xfff] instead of walking off the end. */
+    return (uint8_t *) PTR_RECOMBINE(&ff_pccache_page[0] - (a2 & ~0xfff), &ff_pccache_page[0]);
 }
 
 uint8_t
@@ -675,7 +900,7 @@ read_mem_b(uint32_t addr)
     mem_logical_addr = addr;
     addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->read_b)
         ret = map->read_b(addr, map->priv);
 
@@ -694,7 +919,7 @@ read_mem_w(uint32_t addr)
     if (addr & 1)
         ret = read_mem_b(addr) | (read_mem_b(addr + 1) << 8);
     else {
-        map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+        map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
         if (map && map->read_w)
             ret = map->read_w(addr, map->priv);
@@ -713,7 +938,7 @@ write_mem_b(uint32_t addr, uint8_t val)
     mem_logical_addr = addr;
     addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->write_b)
         map->write_b(addr, val, map->priv);
 }
@@ -730,7 +955,7 @@ write_mem_w(uint32_t addr, uint16_t val)
         write_mem_b(addr, val);
         write_mem_b(addr + 1, val >> 8);
     } else {
-        map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+        map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
         if (map) {
             if (map->write_w)
                 map->write_w(addr, val, map->priv);
@@ -767,7 +992,7 @@ readmembl(uint32_t addr)
     }
     addr = (uint32_t) (addr64 & rammask);
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->read_b)
         return map->read_b(addr, map->priv);
 
@@ -790,8 +1015,8 @@ writemembl(uint32_t addr, uint8_t val)
 
     high_page = 0;
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_b) {
-        page_lookup[addr >> 12]->write_b(addr, val, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_b) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_b(addr, val, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -804,7 +1029,7 @@ writemembl(uint32_t addr, uint8_t val)
     }
     addr = (uint32_t) (addr64 & rammask);
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->write_b)
         map->write_b(addr, val, map->priv);
 }
@@ -827,7 +1052,7 @@ readmembl_no_mmut(uint32_t addr, uint32_t a64)
     } else
         addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->read_b)
         return map->read_b(addr, map->priv);
 
@@ -844,8 +1069,8 @@ writemembl_no_mmut(uint32_t addr, uint32_t a64, uint8_t val)
 
     mem_logical_addr = addr;
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_b) {
-        page_lookup[addr >> 12]->write_b(addr, val, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_b) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_b(addr, val, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -857,7 +1082,7 @@ writemembl_no_mmut(uint32_t addr, uint32_t a64, uint8_t val)
     } else
         addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->write_b)
         map->write_b(addr, val, map->priv);
 }
@@ -895,8 +1120,8 @@ readmemwl(uint32_t addr)
             }
 
             return readmembl_no_mmut(addr, addr64a[0]) | (((uint16_t) readmembl_no_mmut(addr + 1, addr64a[1])) << 8);
-        } else if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
-            return *(uint16_t *) (readlookup2[addr >> 12] + addr);
+        } else if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV)
+            return *(uint16_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
     }
 
     if (cr0 >> 31) {
@@ -910,7 +1135,7 @@ readmemwl(uint32_t addr)
 
     addr = addr64a[0] & rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_w)
         return map->read_w(addr, map->priv);
@@ -948,7 +1173,7 @@ writememwl(uint32_t addr, uint16_t val)
                 for (uint8_t i = 0; i < 2; i++) {
                     /* Do not translate a page that has a valid lookup, as that is by definition valid
                        and the whole purpose of the lookup is to avoid repeat identical translations. */
-                    if (!page_lookup[(addr + i) >> 12] || !page_lookup[(addr + i) >> 12]->write_b) {
+                    if (!PAGE_LOOKUP_GET((addr + i) >> 12) || !PAGE_LOOKUP_GET((addr + i) >> 12)->write_b) {
                         a          = mmutranslate_write(addr + i);
                         addr64a[i] = (uint32_t) a;
 
@@ -963,14 +1188,14 @@ writememwl(uint32_t addr, uint16_t val)
             writemembl_no_mmut(addr, addr64a[0], val);
             writemembl_no_mmut(addr + 1, addr64a[1], val >> 8);
             return;
-        } else if (writelookup2[addr >> 12] != (uintptr_t) LOOKUP_INV) {
-            *(uint16_t *) (writelookup2[addr >> 12] + addr) = val;
+        } else if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV) {
+            *(uint16_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr) = val;
             return;
         }
     }
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_w) {
-        page_lookup[addr >> 12]->write_w(addr, val, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_w) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_w(addr, val, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -984,7 +1209,7 @@ writememwl(uint32_t addr, uint16_t val)
 
     addr = addr64a[0] & rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_w) {
         map->write_w(addr, val, map->priv);
@@ -1018,8 +1243,8 @@ readmemwl_no_mmut(uint32_t addr, uint32_t *a64)
             }
 
             return readmembl_no_mmut(addr, a64[0]) | (((uint16_t) readmembl_no_mmut(addr + 1, a64[1])) << 8);
-        } else if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
-            return *(uint16_t *) (readlookup2[addr >> 12] + addr);
+        } else if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV)
+            return *(uint16_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
     }
 
     if (cr0 >> 31) {
@@ -1030,7 +1255,7 @@ readmemwl_no_mmut(uint32_t addr, uint32_t *a64)
     } else
         addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_w)
         return map->read_w(addr, map->priv);
@@ -1064,14 +1289,14 @@ writememwl_no_mmut(uint32_t addr, uint32_t *a64, uint16_t val)
             writemembl_no_mmut(addr, a64[0], val);
             writemembl_no_mmut(addr + 1, a64[1], val >> 8);
             return;
-        } else if (writelookup2[addr >> 12] != (uintptr_t) LOOKUP_INV) {
-            *(uint16_t *) (writelookup2[addr >> 12] + addr) = val;
+        } else if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV) {
+            *(uint16_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr) = val;
             return;
         }
     }
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_w) {
-        page_lookup[addr >> 12]->write_w(addr, val, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_w) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_w(addr, val, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -1083,7 +1308,7 @@ writememwl_no_mmut(uint32_t addr, uint32_t *a64, uint16_t val)
     } else
         addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_w) {
         map->write_w(addr, val, map->priv);
@@ -1145,8 +1370,8 @@ readmemll(uint32_t addr)
             /* No need to waste precious CPU host cycles on mmutranslate's that were already done, just pass
                their result as a parameter to be used if needed. */
             return readmemwl_no_mmut(addr, addr64a) | (((uint32_t) readmemwl_no_mmut(addr + 2, &(addr64a[2]))) << 16);
-        } else if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
-            return *(uint32_t *) (readlookup2[addr >> 12] + addr);
+        } else if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV)
+            return *(uint32_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
     }
 
     if (cr0 >> 31) {
@@ -1159,7 +1384,7 @@ readmemll(uint32_t addr)
 
     addr = addr64a[0] & rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_l)
         return map->read_l(addr, map->priv);
@@ -1200,7 +1425,7 @@ writememll(uint32_t addr, uint32_t val)
                 for (i = 0; i < 4; i++) {
                     /* Do not translate a page that has a valid lookup, as that is by definition valid
                        and the whole purpose of the lookup is to avoid repeat identical translations. */
-                    if (!page_lookup[(addr + i) >> 12] || !page_lookup[(addr + i) >> 12]->write_b) {
+                    if (!PAGE_LOOKUP_GET((addr + i) >> 12) || !PAGE_LOOKUP_GET((addr + i) >> 12)->write_b) {
                         if (i == 0) {
                             a          = mmutranslate_write(addr + i);
                             addr64a[i] = (uint32_t) a;
@@ -1227,14 +1452,14 @@ writememll(uint32_t addr, uint32_t val)
             writememwl_no_mmut(addr, &(addr64a[0]), val);
             writememwl_no_mmut(addr + 2, &(addr64a[2]), val >> 16);
             return;
-        } else if (writelookup2[addr >> 12] != (uintptr_t) LOOKUP_INV) {
-            *(uint32_t *) (writelookup2[addr >> 12] + addr) = val;
+        } else if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV) {
+            *(uint32_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr) = val;
             return;
         }
     }
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_l) {
-        page_lookup[addr >> 12]->write_l(addr, val, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_l) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_l(addr, val, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -1248,7 +1473,7 @@ writememll(uint32_t addr, uint32_t val)
 
     addr = addr64a[0] & rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_l) {
         map->write_l(addr, val, map->priv);
@@ -1288,8 +1513,8 @@ readmemll_no_mmut(uint32_t addr, uint32_t *a64)
             }
 
             return readmemwl_no_mmut(addr, a64) | ((uint32_t) (readmemwl_no_mmut(addr + 2, &(a64[2]))) << 16);
-        } else if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
-            return *(uint32_t *) (readlookup2[addr >> 12] + addr);
+        } else if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV)
+            return *(uint32_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
     }
 
     if (cr0 >> 31) {
@@ -1300,7 +1525,7 @@ readmemll_no_mmut(uint32_t addr, uint32_t *a64)
     } else
         addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_l)
         return map->read_l(addr, map->priv);
@@ -1336,14 +1561,14 @@ writememll_no_mmut(uint32_t addr, uint32_t *a64, uint32_t val)
             writememwl_no_mmut(addr, &(a64[0]), val);
             writememwl_no_mmut(addr + 2, &(a64[2]), val >> 16);
             return;
-        } else if (writelookup2[addr >> 12] != (uintptr_t) LOOKUP_INV) {
-            *(uint32_t *) (writelookup2[addr >> 12] + addr) = val;
+        } else if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV) {
+            *(uint32_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr) = val;
             return;
         }
     }
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_l) {
-        page_lookup[addr >> 12]->write_l(addr, val, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_l) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_l(addr, val, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -1355,7 +1580,7 @@ writememll_no_mmut(uint32_t addr, uint32_t *a64, uint32_t val)
     } else
         addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_l) {
         map->write_l(addr, val, map->priv);
@@ -1422,8 +1647,8 @@ readmemql(uint32_t addr)
             /* No need to waste precious CPU host cycles on mmutranslate's that were already done, just pass
                their result as a parameter to be used if needed. */
             return readmemll_no_mmut(addr, addr64a) | (((uint64_t) readmemll_no_mmut(addr + 4, &(addr64a[4]))) << 32);
-        } else if (readlookup2[addr >> 12] != (uintptr_t) LOOKUP_INV)
-            return *(uint64_t *) (readlookup2[addr >> 12] + addr);
+        } else if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV)
+            return *(uint64_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
     }
 
     if (cr0 >> 31) {
@@ -1436,7 +1661,7 @@ readmemql(uint32_t addr)
 
     addr = addr64a[0] & rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_l)
         return map->read_l(addr, map->priv) |
@@ -1487,7 +1712,7 @@ writememql(uint32_t addr, uint64_t val)
                 for (i = 0; i < 8; i++) {
                     /* Do not translate a page that has a valid lookup, as that is by definition valid
                        and the whole purpose of the lookup is to avoid repeat identical translations. */
-                    if (!page_lookup[(addr + i) >> 12] || !page_lookup[(addr + i) >> 12]->write_b) {
+                    if (!PAGE_LOOKUP_GET((addr + i) >> 12) || !PAGE_LOOKUP_GET((addr + i) >> 12)->write_b) {
                         if (i == 0) {
                             a          = mmutranslate_write(addr + i);
                             addr64a[i] = (uint32_t) a;
@@ -1514,15 +1739,15 @@ writememql(uint32_t addr, uint64_t val)
             writememll_no_mmut(addr, addr64a, val);
             writememll_no_mmut(addr + 4, &(addr64a[4]), val >> 32);
             return;
-        } else if (writelookup2[addr >> 12] != (uintptr_t) LOOKUP_INV) {
-            *(uint64_t *) (writelookup2[addr >> 12] + addr) = val;
+        } else if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) LOOKUP_INV) {
+            *(uint64_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr) = val;
             return;
         }
     }
 
-    if (page_lookup[addr >> 12] && page_lookup[addr >> 12]->write_l) {
-        page_lookup[addr >> 12]->write_l(addr, val, page_lookup[addr >> 12]);
-        page_lookup[addr >> 12]->write_l(addr + 4, val >> 32, page_lookup[addr >> 12]);
+    if (PAGE_LOOKUP_GET(addr >> 12) && PAGE_LOOKUP_GET(addr >> 12)->write_l) {
+        PAGE_LOOKUP_GET(addr >> 12)->write_l(addr, val, PAGE_LOOKUP_GET(addr >> 12));
+        PAGE_LOOKUP_GET(addr >> 12)->write_l(addr + 4, val >> 32, PAGE_LOOKUP_GET(addr >> 12));
         return;
     }
 
@@ -1534,7 +1759,7 @@ writememql(uint32_t addr, uint64_t val)
 
     addr = addr64a[0] & rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_l) {
         map->write_l(addr, val, map->priv);
@@ -1576,7 +1801,7 @@ do_mmutranslate(uint32_t addr, uint32_t *a64, int num, int write)
 
     if (cr0 >> 31)  for (i = 0; i < num; i++) {
         if (write && ((i == 0) || !(addr & 0xfff)))
-            cond = (!page_lookup[addr >> 12] || !page_lookup[addr >> 12]->write_b);
+            cond = (!PAGE_LOOKUP_GET(addr >> 12) || !PAGE_LOOKUP_GET(addr >> 12)->write_b);
 
         if (cond) {
             /* If we have encountered at least one page fault, mark all subsequent addresses as
@@ -1613,7 +1838,7 @@ do_mmutranslate(uint32_t addr, uint32_t *a64, int num, int write)
 uint8_t
 mem_readb_phys(uint32_t addr)
 {
-    mem_mapping_t *map = read_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t *map = READ_MAPPING_BUS(addr >> MEM_GRANULARITY_BITS);
     uint8_t        ret = 0xff;
 
     mem_logical_addr = 0xffffffff;
@@ -1631,7 +1856,7 @@ mem_readb_phys(uint32_t addr)
 uint16_t
 mem_readw_phys(uint32_t addr)
 {
-    mem_mapping_t  *map = read_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t  *map = READ_MAPPING_BUS(addr >> MEM_GRANULARITY_BITS);
     uint16_t        ret;
     const uint16_t *p;
 
@@ -1653,7 +1878,7 @@ mem_readw_phys(uint32_t addr)
 uint32_t
 mem_readl_phys(uint32_t addr)
 {
-    mem_mapping_t  *map = read_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t  *map = READ_MAPPING_BUS(addr >> MEM_GRANULARITY_BITS);
     uint32_t        ret;
     const uint32_t *p;
 
@@ -1694,7 +1919,7 @@ mem_read_phys(void *dest, uint32_t addr, int transfer_size)
 void
 mem_writeb_phys(uint32_t addr, uint8_t val)
 {
-    mem_mapping_t *map = write_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t *map = WRITE_MAPPING_BUS(addr >> MEM_GRANULARITY_BITS);
 
     mem_logical_addr = 0xffffffff;
 
@@ -1709,7 +1934,7 @@ mem_writeb_phys(uint32_t addr, uint8_t val)
 void
 mem_writew_phys(uint32_t addr, uint16_t val)
 {
-    mem_mapping_t *map = write_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t *map = WRITE_MAPPING_BUS(addr >> MEM_GRANULARITY_BITS);
     uint16_t      *p;
 
     mem_logical_addr = 0xffffffff;
@@ -1728,7 +1953,7 @@ mem_writew_phys(uint32_t addr, uint16_t val)
 void
 mem_writel_phys(uint32_t addr, uint32_t val)
 {
-    mem_mapping_t *map = write_mapping_bus[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t *map = WRITE_MAPPING_BUS(addr >> MEM_GRANULARITY_BITS);
     uint32_t      *p;
 
     mem_logical_addr = 0xffffffff;
@@ -2231,9 +2456,222 @@ mem_mapping_access_allowed(uint32_t flags, uint16_t access)
     return ret;
 }
 
+#ifdef MEM_COMPACT_TABLES
+/* On-demand equivalents of what mem_mapping_recalc() below precomputes
+ * into read_mapping[]/write_mapping[]/_mem_exec[] (+_bus), for a single
+ * physical page instead of a whole range. Safe by construction: there is
+ * nothing to cache incorrectly here, either it resolves right or it
+ * resolves right - the only cost is time, and that's paid on a
+ * readlookup2/writelookup2 miss (386_common.h) or an exec-cache miss
+ * (mem_exec_lookup() below), not on every single memory access.
+ *
+ * Deliberately NOT replicated: the address-mirroring/repeat logic
+ * (base_ignore) from mem_mapping_recalc(). Verified that every real
+ * caller of mem_mapping_recalc() in the codebase (mem_set_access(),
+ * mem_set_wp(), src/mem/smram.c) always passes base_ignore = 0, which
+ * makes that logic a no-op today - nothing to replicate. */
+static mem_mapping_t *
+mem_mapping_resolve_common(uint32_t page_num, int bus, int want_write)
+{
+    mem_mapping_t *map    = base_mapping;
+    mem_mapping_t *result = NULL;
+    uint32_t       addr   = page_num << MEM_GRANULARITY_BITS;
+    int            n;
+    uint8_t        wp;
+    /* Pages outside both tracked ranges (see the hybrid-tables comment
+     * above their declaration) have no storage - fall back to the same
+     * neutral/zero state an untouched entry in the original full-size
+     * array would have had. */
+    static const mem_state_t neutral_state = { 0 };
+    uint8_t             *wp_slot     = mem_wp_lookup(page_num);
+    uint8_t             *wp_bus_slot = mem_wp_bus_lookup(page_num);
+    const mem_state_t   *state_slot  = mem_state_lookup(page_num);
+    const mem_state_t   *state       = state_slot ? state_slot : &neutral_state;
+
+    while (map != NULL) {
+        /* base+size must be widened to 64-bit before adding: the top-of-4GB
+         * BIOS alias any 32-bit-bus 486+ registers (rom.c's bios_add(),
+         * base=0xfff00000|biosaddr, typically ending up as 0xFFFF0000,
+         * size=biosmask+1) sums to exactly 0x100000000, which silently
+         * wraps to 0 in plain uint32_t arithmetic - making this mapping
+         * fail to match ANY address, forever. mem_mapping_recalc() below
+         * (the original, still-used-when-!MEM_COMPACT_TABLES code this
+         * resolver replaces) already does this widening; this on-demand
+         * version didn't replicate it - confirmed on real hardware as the
+         * root cause of a CPU-reset-vector fetch reading floating-bus 0xFF
+         * instead of the BIOS's actual reset code, cascading into every
+         * "wild jump into empty memory" symptom chased this whole session,
+         * on ESP32 AND desktop alike (this bug has nothing to do with
+         * platform bitness). */
+        if (map->enable && (map->base <= addr) && ((uint64_t) addr < ((uint64_t) map->base + (uint64_t) map->size))) {
+            n = (!!in_smm) || (is_cxsmm && (ccr1 & CCR1_SMAC));
+            if (bus)
+                n |= STATE_BUS;
+
+            if (want_write) {
+                wp = bus ? (wp_bus_slot ? *wp_bus_slot : 0) : (wp_slot ? *wp_slot : 0);
+                if (!wp && (map->write_b || map->write_w || map->write_l) &&
+                    mem_mapping_access_allowed(map->flags, state->states[n].w))
+                    result = map;
+            } else {
+                if ((map->read_b || map->read_w || map->read_l) &&
+                    mem_mapping_access_allowed(map->flags, state->states[n].r))
+                    result = map;
+            }
+        }
+        map = map->next;
+    }
+
+    return result;
+}
+
+#ifdef CLAUDE_LOG
+/* Diagnostic: unlike mem_exec_lookup() (instruction fetch), every plain
+ * data read/write goes through mem_mapping_resolve_common()'s full
+ * linked-list walk with NO caching at all - a real, structural gap if
+ * this turns out to be where cpu_exec()'s ~88ms/call actually goes
+ * (switching CPU interpreters, which share this same data-access path,
+ * made no measurable difference on real hardware - consistent with the
+ * cost being here rather than in either interpreter's own dispatch).
+ * Cumulative per-pc_run() time and call count, reset/reported from
+ * pc_run()'s existing diagnostic block in 86box.c. */
+uint64_t esp32_mem_resolve_time_us  = 0;
+uint32_t esp32_mem_resolve_calls    = 0;
+/* claude_log_now_us() comes from 86box.h */
+#endif
+
+mem_mapping_t *
+mem_mapping_resolve_read(uint32_t page_num)
+{
+#ifdef CLAUDE_LOG
+    uint64_t t0 = claude_log_now_us();
+    mem_mapping_t *r = mem_mapping_resolve_common(page_num, 0, 0);
+    esp32_mem_resolve_time_us += (claude_log_now_us() - t0);
+    esp32_mem_resolve_calls++;
+    return r;
+#else
+    return mem_mapping_resolve_common(page_num, 0, 0);
+#endif
+}
+
+mem_mapping_t *
+mem_mapping_resolve_write(uint32_t page_num)
+{
+#ifdef CLAUDE_LOG
+    uint64_t t0 = claude_log_now_us();
+    mem_mapping_t *r = mem_mapping_resolve_common(page_num, 0, 1);
+    esp32_mem_resolve_time_us += (claude_log_now_us() - t0);
+    esp32_mem_resolve_calls++;
+    return r;
+#else
+    return mem_mapping_resolve_common(page_num, 0, 1);
+#endif
+}
+
+mem_mapping_t *
+mem_mapping_resolve_read_bus(uint32_t page_num)
+{
+    return mem_mapping_resolve_common(page_num, 1, 0);
+}
+
+mem_mapping_t *
+mem_mapping_resolve_write_bus(uint32_t page_num)
+{
+    return mem_mapping_resolve_common(page_num, 1, 1);
+}
+
+uint8_t *
+mem_mapping_resolve_exec(uint32_t page_num)
+{
+    mem_mapping_t *map    = base_mapping;
+    uint8_t       *result = NULL;
+    uint32_t       addr   = page_num << MEM_GRANULARITY_BITS;
+    int            n;
+    static const mem_state_t neutral_state = { 0 };
+    const mem_state_t      *state_slot = mem_state_lookup(page_num);
+    const mem_state_t      *state      = state_slot ? state_slot : &neutral_state;
+
+    while (map != NULL) {
+        /* base+size must be widened to 64-bit before adding: the top-of-4GB
+         * BIOS alias any 32-bit-bus 486+ registers (rom.c's bios_add(),
+         * base=0xfff00000|biosaddr, typically ending up as 0xFFFF0000,
+         * size=biosmask+1) sums to exactly 0x100000000, which silently
+         * wraps to 0 in plain uint32_t arithmetic - making this mapping
+         * fail to match ANY address, forever. mem_mapping_recalc() below
+         * (the original, still-used-when-!MEM_COMPACT_TABLES code this
+         * resolver replaces) already does this widening; this on-demand
+         * version didn't replicate it - confirmed on real hardware as the
+         * root cause of a CPU-reset-vector fetch reading floating-bus 0xFF
+         * instead of the BIOS's actual reset code, cascading into every
+         * "wild jump into empty memory" symptom chased this whole session,
+         * on ESP32 AND desktop alike (this bug has nothing to do with
+         * platform bitness). */
+        if (map->enable && (map->base <= addr) && ((uint64_t) addr < ((uint64_t) map->base + (uint64_t) map->size))) {
+            n = (!!in_smm) || (is_cxsmm && (ccr1 & CCR1_SMAC));
+
+            if (map->exec && mem_mapping_access_allowed(map->flags, state->states[n].x))
+                result = map->exec + (addr - map->base);
+        }
+        map = map->next;
+    }
+
+    return result;
+}
+
+/* _mem_exec[]'s small tag-checked cache, lazily filled (see the
+ * MEM_EXEC_LOOKUP comment in mem.h). */
+uint8_t *
+mem_exec_lookup(uint32_t page_num)
+{
+    uint32_t slot = MEM_TLB_SLOT(page_num);
+
+#ifdef CLAUDE_LOG
+    /* Diagnostic: is instruction fetch actually hitting this cache, or
+     * constantly missing and falling back to mem_mapping_resolve_exec()'s
+     * linked-list walk? Rate-limited to avoid flooding the console on a
+     * function called on every instruction fetch. */
+    static uint32_t hits = 0, misses = 0;
+    if (_mem_exec_tag[slot] != page_num)
+        misses++;
+    else
+        hits++;
+    if ((hits + misses) >= 200000) {
+        pclog("# mem_exec_lookup: hits=%u misses=%u (hit rate %u%%)\n",
+              hits, misses, (unsigned) ((100ULL * hits) / (hits + misses)));
+        hits = 0;
+        misses = 0;
+    }
+#endif
+
+    if (_mem_exec_tag[slot] != page_num) {
+        _mem_exec[slot]     = mem_mapping_resolve_exec(page_num);
+        _mem_exec_tag[slot] = page_num;
+    }
+
+    return _mem_exec[slot];
+}
+#endif
+
 void
 mem_mapping_recalc(uint64_t base, uint64_t size, uint32_t base_ignore)
 {
+    if (!size || (base_mapping == NULL))
+        return;
+
+#ifdef MEM_COMPACT_TABLES
+    /* read_mapping[]/write_mapping[] (+_bus) no longer exist in this mode
+     * (see mem_mapping_resolve_read()/_write()/_bus() above) - nothing to
+     * precompute for them. _mem_exec[]'s small cache, however, DOES need
+     * invalidating: it's lazily filled (mem_exec_lookup()) and a stale
+     * entry could otherwise survive this mapping change. A full reset is
+     * simpler and safe - mem_mapping_recalc() runs on configuration
+     * changes, not on the hot path, so this cost is paid rarely. */
+    memset(_mem_exec, 0x00, MEM_TLB_SIZE * sizeof(uint8_t *));
+    memset(_mem_exec_tag, 0xff, MEM_TLB_SIZE * sizeof(uint32_t));
+
+    flushmmucache_nopc();
+    return;
+#else
     mem_mapping_t *map;
     int            n;
     uint64_t       c;
@@ -2241,9 +2679,6 @@ mem_mapping_recalc(uint64_t base, uint64_t size, uint32_t base_ignore)
     uint64_t       mask = (cpu_16bitbus ?
                            (is6117 ? 0x03ffffffULL : 0x00ffffffULL) :
                            0xffffffffULL);
-
-    if (!size || (base_mapping == NULL))
-        return;
 
     map = base_mapping;
 
@@ -2405,6 +2840,7 @@ mem_mapping_recalc(uint64_t base, uint64_t size, uint32_t base_ignore)
     }
     pclog("\n");
 #endif
+#endif /* MEM_COMPACT_TABLES */
 }
 
 void
@@ -2414,10 +2850,25 @@ mem_set_wp(uint64_t base, uint64_t size, uint8_t flags, uint8_t wp)
     uint64_t       end = base + size;
 
     for (c = base; c < end; c += MEM_GRANULARITY_SIZE) {
+#ifdef MEM_COMPACT_TABLES
+        uint8_t *slot;
+
+        if (flags & ACCESS_BUS) {
+            slot = mem_wp_bus_lookup((uint32_t) (c >> MEM_GRANULARITY_BITS));
+            if (slot)
+                *slot = wp;
+        }
+        if (flags & ACCESS_CPU) {
+            slot = mem_wp_lookup((uint32_t) (c >> MEM_GRANULARITY_BITS));
+            if (slot)
+                *slot = wp;
+        }
+#else
         if (flags & ACCESS_BUS)
             _mem_wp_bus[c >> MEM_GRANULARITY_BITS] = wp;
         if (flags & ACCESS_CPU)
             _mem_wp[c >> MEM_GRANULARITY_BITS] = wp;
+#endif
     }
 
     mem_mapping_recalc(base, size, 0x00000000);
@@ -2650,9 +3101,17 @@ mem_set_access(uint8_t bitmap, int mode, uint32_t base, uint32_t size, uint16_t 
         smstate = access & 0x6f7b;
 
     for (uint32_t c = 0; c < size; c += MEM_GRANULARITY_SIZE) {
+#ifdef MEM_COMPACT_TABLES
+        mem_state_t *state_slot = mem_state_lookup((c + base) >> MEM_GRANULARITY_BITS);
+#endif
         for (uint8_t i = 0; i < 4; i++) {
             if (bitmap & (1 << i)) {
+#ifdef MEM_COMPACT_TABLES
+                if (state_slot)
+                    state_slot->vals[i] = (state_slot->vals[i] & mask) | smstate;
+#else
                 _mem_state[(c + base) >> MEM_GRANULARITY_BITS].vals[i] = (_mem_state[(c + base) >> MEM_GRANULARITY_BITS].vals[i] & mask) | smstate;
+#endif
             }
         }
 
@@ -2780,8 +3239,22 @@ mem_reset(void)
             if (is6117)
                 m <<= 2;
         } else {
+#ifdef MEM_COMPACT_TABLES
+            /* 80386DX+, compact build: pages[] only ever needs to cover
+             * (a) the actually configured RAM, and (b) the low-megabyte
+             * BIOS-shadow/memory-hole remap region some chipsets touch via
+             * hard-coded or near-1MB-relative page indices regardless of
+             * mem_size (see mem_remap_top_ex() below and its chipset
+             * callers). 4096 pages (16MB) is a generous, empirically-checked
+             * ceiling for that second part - still >250x smaller than the
+             * flat 4GB (1048576-entry) table used otherwise. */
+            m = (uint32_t) ((mem_size << 10) >> 12);
+            if (m < 4096)
+                m = 4096;
+#else
             /* 80386DX+; maximum address space is 4GB. */
             m = 1048576;
+#endif
         }
     } else {
         /* 8088/86; maximum address space is 1MB. */
@@ -2794,9 +3267,25 @@ mem_reset(void)
      * Allocate and initialize the (new) page table.
      */
     pages_sz = m;
+#ifdef ESP_PLATFORM
+    pclog("# mem_reset: about to alloc pages[%u] (%u bytes) - free PSRAM=%u free internal=%u largest_internal=%u largest_psram=%u\n",
+          m, (unsigned) (m * sizeof(page_t)),
+          (unsigned) heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+          (unsigned) heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+          (unsigned) heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+          (unsigned) heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM));
+#endif
     pages    = (page_t *) calloc(m, sizeof(page_t));
+    if (pages == NULL) {
+        fatal("Failed to allocate page table (%u entries). Make sure you have enough RAM available.\n", m);
+        return;
+    }
 
+#ifdef MEM_COMPACT_TABLES
+    memset(page_lookup, 0x00, MEM_TLB_SIZE * sizeof(page_t *));
+#else
     memset(page_lookup, 0x00, (1 << 20) * sizeof(page_t *));
+#endif
 
 #ifdef USE_NEW_DYNAREC
     byte_dirty_mask = calloc(1, (mem_size * 1024) / 8);
@@ -2824,17 +3313,33 @@ mem_reset(void)
     }
 
     memset(_mem_exec, 0x00, sizeof(_mem_exec));
+#ifdef MEM_COMPACT_TABLES
+    memset(_mem_wp_dense, 0x00, sizeof(_mem_wp_dense));
+    memset(_mem_wp_bus_dense, 0x00, sizeof(_mem_wp_bus_dense));
+    memset(_mem_wp_high, 0x00, sizeof(_mem_wp_high));
+    memset(_mem_wp_bus_high, 0x00, sizeof(_mem_wp_bus_high));
+    _mem_wp_compaq     = 0;
+    _mem_wp_bus_compaq = 0;
+    memset(_mem_exec_tag, 0xff, sizeof(_mem_exec_tag));
+#else
     memset(_mem_wp, 0x00, sizeof(_mem_wp));
     memset(_mem_wp_bus, 0x00, sizeof(_mem_wp_bus));
     memset(write_mapping, 0x00, sizeof(write_mapping));
     memset(read_mapping, 0x00, sizeof(read_mapping));
     memset(write_mapping_bus, 0x00, sizeof(write_mapping_bus));
     memset(read_mapping_bus, 0x00, sizeof(read_mapping_bus));
+#endif
 
     base_mapping = last_mapping = NULL;
 
     /* Set the entire memory space as external. */
+#ifdef MEM_COMPACT_TABLES
+    memset(_mem_state_dense, 0x00, sizeof(_mem_state_dense));
+    memset(_mem_state_high, 0x00, sizeof(_mem_state_high));
+    memset(&_mem_state_compaq, 0x00, sizeof(_mem_state_compaq));
+#else
     memset(_mem_state, 0x00, sizeof(_mem_state));
+#endif
 
     /* Set the low RAM space as internal. */
     mem_init_ram_mapping(&ram_low_mapping, 0x000000, (mem_size > 640) ? 0xa0000 : mem_size * 1024);

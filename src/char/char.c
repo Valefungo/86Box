@@ -97,7 +97,7 @@ char_log(const char *fmt, ...)
 #    define char_log(fmt, ...)
 #endif
 
-static char_port_t *active_port = NULL;
+static char_port_t *ESP32_BIG_BSS_ATTR active_port = NULL;
 
 const device_t *
 char_get_device(const int id)

@@ -324,33 +324,6 @@ machine_at_spc7500p_init(const machine_t *model)
     return ret;
 }
 
-/* SiS 461 */
-int
-machine_at_decpclpv_init(const machine_t *model)
-{
-    int ret;
-
-    ret = bios_load_linear("roms/machines/decpclpv/bios.bin",
-                           0x000e0000, 131072, 0);
-
-    if (bios_only || !ret)
-        return ret;
-
-    machine_at_common_init(model);
-
-    device_add(&sis_85c461_device);
-
-    if (gfxcard[0] == VID_INTERNAL)
-        device_add(machine_get_vid_device(machine));
-
-    device_add_params(machine_get_kbc_device(machine), (void *) model->kbc_params);
-
-    device_add(&ide_isa_2ch_device);
-    device_add_params(&fdc37c6xx_device, (void *) (FDC37C663 | FDC37C6XX_IDE_PRI));
-
-    return ret;
-}
-
 int
 machine_at_dell466np_init(const machine_t *model)
 {

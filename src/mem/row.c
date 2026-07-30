@@ -36,9 +36,9 @@
 static uint8_t  rows_num;
 static uint8_t  rows_default;
 static uint8_t  rows_bits;
-static uint32_t row_unit;
-static uint8_t  drb_defaults[16];
-static row_t    *rows;
+static uint32_t ESP32_BIG_BSS_ATTR row_unit;
+static uint8_t  ESP32_BIG_BSS_ATTR drb_defaults[16];
+static row_t    *ESP32_BIG_BSS_ATTR rows;
 
 
 static uint8_t

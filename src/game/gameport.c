@@ -33,7 +33,7 @@
 #include <86box/gameport.h>
 #include <86box/plat_unused.h>
 
-device_t game_ports[GAMEPORT_MAX];
+device_t ESP32_BIG_BSS_ATTR game_ports[GAMEPORT_MAX];
 
 typedef struct {
     const device_t *device;
@@ -65,7 +65,7 @@ typedef struct _joystick_instance_ {
     void             *dat;
 } joystick_instance_t;
 
-int joystick_type[GAMEPORT_MAX] = { JS_TYPE_NONE, JS_TYPE_NONE };
+int ESP32_BIG_BSS_ATTR joystick_type[GAMEPORT_MAX] = { JS_TYPE_NONE, JS_TYPE_NONE };
 
 static const joystick_t joystick_none = {
     .name          = "None",
@@ -136,7 +136,7 @@ static const struct {
     { NULL                                         }
 };
 
-static joystick_instance_t *joystick_instance[GAMEPORT_MAX] = { NULL, NULL };
+static joystick_instance_t *ESP32_BIG_BSS_ATTR joystick_instance[GAMEPORT_MAX] = { NULL, NULL };
 
 static uint8_t gameport_pnp_rom[] = {
     /* BOX0002, serial 0, dummy checksum (filled in by isapnp_add_card) */
@@ -178,11 +178,11 @@ static const isapnp_device_config_t gameport_pnp_defaults[] = {
     }
 };
 
-const device_t *standalone_gameport_type;
-int             gameport_instance_id = 0;
+const device_t *ESP32_BIG_BSS_ATTR standalone_gameport_type;
+int             ESP32_BIG_BSS_ATTR gameport_instance_id = 0;
 /* Linked list of active game ports. Only the top port responds to reads
    or writes, and ports at the standard 200h location are prioritized. */
-static gameport_t *active_gameports = NULL;
+static gameport_t *ESP32_BIG_BSS_ATTR active_gameports = NULL;
 
 const char *
 joystick_get_name(int js)

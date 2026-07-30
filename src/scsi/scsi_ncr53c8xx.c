@@ -2279,8 +2279,8 @@ ncr53c8xx_bios_disable(ncr53c8xx_t *dev)
     mem_mapping_disable(&dev->bios.mapping);
 }
 
-uint8_t ncr53c8xx_pci_regs[256];
-bar_t   ncr53c8xx_pci_bar[4];
+uint8_t ESP32_BIG_BSS_ATTR ncr53c8xx_pci_regs[256];
+bar_t   ESP32_BIG_BSS_ATTR ncr53c8xx_pci_bar[4];
 
 static uint8_t
 ncr53c8xx_pci_read(UNUSED(int func), int addr, UNUSED(int len), void *priv)

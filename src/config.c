@@ -29,6 +29,17 @@
 
 #ifdef _WIN32
 #    include <ws2tcpip.h>
+#elif defined(ESP_PLATFORM)
+/* ESP-IDF's arpa/inet.h (lwip) gives struct in_addr but declares neither
+ * AF_INET nor inet_pton() unless the full lwip sockets API is linked in -
+ * not worth it since networking is fully stubbed on this port (see
+ * esp32/main/esp32_network.c, which also provides the tiny AF_INET-only
+ * inet_pton() declared here). */
+#    include <arpa/inet.h>
+#    ifndef AF_INET
+#        define AF_INET 2
+#    endif
+extern int inet_pton(int af, const char *src, void *dst);
 #else
 #    include <arpa/inet.h>
 #endif
@@ -99,13 +110,13 @@ extern char gl3_shader_file[MAX_USER_SHADERS][512];
 extern char vk_shader_file[20][512];
 #endif
 
-static int      cx;
-static int      cy;
-static int      cw;
-static int      ch;
-static ini_t    config;
-static ini_t    global;
-static mutex_t *config_mutex = NULL;
+static int      ESP32_BIG_BSS_ATTR cx;
+static int      ESP32_BIG_BSS_ATTR cy;
+static int      ESP32_BIG_BSS_ATTR cw;
+static int      ESP32_BIG_BSS_ATTR ch;
+static ini_t    ESP32_BIG_BSS_ATTR config;
+static ini_t    ESP32_BIG_BSS_ATTR global;
+static mutex_t *ESP32_BIG_BSS_ATTR config_mutex = NULL;
 
 #ifdef ENABLE_CONFIG_LOG
 int config_do_log = ENABLE_CONFIG_LOG;
@@ -125,8 +136,8 @@ config_log(const char *fmt, ...)
 #    define config_log(fmt, ...)
 #endif
 
-int new_loaded = 0;
-int kb_loaded  = 0;
+int ESP32_BIG_BSS_ATTR new_loaded = 0;
+int ESP32_BIG_BSS_ATTR kb_loaded  = 0;
 
 /* Load global configuration */
 static void
@@ -530,6 +541,7 @@ load_machine(void)
     cpu_override_interpreter = ini_section_get_int(cat, "cpu_override_interpreter", 0);
     cpu_f                    = NULL;
     p                        = ini_section_get_string(cat, "cpu_family", NULL);
+    cpu_override_interpreter = 1;
     if (p) {
         /* Migrate CPU family changes. */
         if (machines[machine].init == machine_at_deskpro386_init)
@@ -595,7 +607,8 @@ load_machine(void)
     fpu_type = fpu_get_type(cpu_f, cpu, p);
 
     mem_size = ini_section_get_int(cat, "mem_size", 64);
-
+    mem_size = 2048;
+    
     if (mem_size > machine_get_max_ram(machine))
         mem_size = machine_get_max_ram(machine);
 
@@ -633,6 +646,9 @@ load_video(void)
         gfxcard[0] = VID_INTERNAL;
     } else {
         p = ini_section_get_string(cat, "gfxcard", NULL);
+#ifdef ESP_PLATFORM
+        pclog("# load_video: raw gfxcard string = %s (ptr=%p)\n", p ? p : "(null)", (void *) p);
+#endif
         if (p == NULL) {
             if (machine_has_flags(machine, MACHINE_VIDEO)) {
                 p = (char *) malloc((strlen("internal") + 1) * sizeof(char));

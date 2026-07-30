@@ -41,6 +41,7 @@
 #include <errno.h>
 #include "lzw.h"
 #include "lzwlocal.h"
+#include <86box/86box.h>
 
 /***************************************************************************
 *                            TYPE DEFINITIONS
@@ -63,8 +64,11 @@ typedef struct
 *                            GLOBAL VARIABLES
 ***************************************************************************/
 
-/* dictionary of string the code word is the dictionary index */
-static decode_dictionary_t dictionary[(MAX_CODES - FIRST_CODE)];
+/* dictionary of string the code word is the dictionary index - 15KB,
+ * only touched while actually decompressing a TeleDisk (.TD0) floppy
+ * image, nowhere near the CPU-emulation hot path - move it to PSRAM to
+ * free up internal SRAM headroom. */
+static decode_dictionary_t ESP32_BIG_BSS_ATTR dictionary[(MAX_CODES - FIRST_CODE)];
 
 /***************************************************************************
 *                               PROTOTYPES

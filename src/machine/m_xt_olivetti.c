@@ -116,7 +116,7 @@ enum MM58274_ADDR {
     MM58274_SETTINGS /* Settings register */
 };
 
-static struct tm intclk;
+static struct tm ESP32_BIG_BSS_ATTR intclk;
 
 typedef struct m24_kbd_t {
     /* Keyboard stuff. */
@@ -144,9 +144,9 @@ typedef struct m19_vid_t {
     int         mode;
 } m19_vid_t;
 
-static uint8_t key_queue[16];
-static int     key_queue_start = 0;
-static int     key_queue_end   = 0;
+static uint8_t ESP32_BIG_BSS_ATTR key_queue[16];
+static int     ESP32_BIG_BSS_ATTR key_queue_start = 0;
+static int     ESP32_BIG_BSS_ATTR key_queue_end   = 0;
 
 video_timings_t timing_m19_vid = { VIDEO_ISA, 8, 16, 32, 8, 16, 32 };
 

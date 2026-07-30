@@ -791,9 +791,9 @@ static void
     ide_sec_disable();
 
     if (info->local)
-        dev->nvr = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_AMI_1994);
+        dev->nvr = device_add_params64(&nvr_at_device, NVR_AMI_1994);
     else
-        dev->nvr = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_AT);
+        dev->nvr = device_add_params64(&nvr_at_device, NVR_AT);
 
     dma_high_page_init();
 

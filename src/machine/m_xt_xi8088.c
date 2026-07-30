@@ -35,7 +35,7 @@ typedef struct xi8088_t {
     int bios_128kb;
 } xi8088_t;
 
-static xi8088_t xi8088;
+static xi8088_t ESP32_BIG_BSS_ATTR xi8088;
 
 uint8_t
 xi8088_turbo_get(void)

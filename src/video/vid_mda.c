@@ -41,10 +41,10 @@ enum mda_monitor_type_e {
     MDA_MONITOR_TYPE_AMBER   = 2, // Amber phosphor
     MDA_MONITOR_TYPE_GRAY    = 3, // Gray phosphor
     MDA_MONITOR_TYPE_RGBI    = 4, // RGBI colour monitor with modified rev1 or rev0 MDA card for colour support
-} mda_monitor_type;
+} mda_monitor_type ESP32_BIG_BSS_ATTR;
 
 // [attr][blink][fg]
-static int mda_attr_to_color_table[256][2][2];
+static int ESP32_BIG_BSS_ATTR mda_attr_to_color_table[256][2][2];
 
 static video_timings_t timing_mda = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
 

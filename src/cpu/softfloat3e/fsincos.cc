@@ -26,6 +26,9 @@ these four paragraphs for those parts of this code that are retained.
 #define FLOAT128
 
 #define USE_estimateDiv128To64
+#include <cstdint>
+#include <cstdio>
+#include <86box/86box.h>
 #include "config.h"
 #include "specialize.h"
 
@@ -93,7 +96,7 @@ static int reduce_trig_arg(int expDiff, int &zSign, uint64_t &aSig0, uint64_t &a
 #define SIN_ARR_SIZE 11
 #define COS_ARR_SIZE 11
 
-static float128_t sin_arr[SIN_ARR_SIZE] =
+static float128_t ESP32_BIG_BSS_ATTR sin_arr[SIN_ARR_SIZE] =
 {
     PACK_FLOAT_128(0x3fff000000000000, 0x0000000000000000), /*  1 */
     PACK_FLOAT_128(0xbffc555555555555, 0x5555555555555555), /*  3 */
@@ -108,7 +111,7 @@ static float128_t sin_arr[SIN_ARR_SIZE] =
     PACK_FLOAT_128(0x3fbd71b8ef6dcf57, 0x18bef146fcee6e45)  /* 21 */
 };
 
-static float128_t cos_arr[COS_ARR_SIZE] =
+static float128_t ESP32_BIG_BSS_ATTR cos_arr[COS_ARR_SIZE] =
 {
     PACK_FLOAT_128(0x3fff000000000000, 0x0000000000000000), /*  0 */
     PACK_FLOAT_128(0xbffe000000000000, 0x0000000000000000), /*  2 */

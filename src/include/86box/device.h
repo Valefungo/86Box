@@ -169,7 +169,7 @@ typedef struct _device_ {
     const char *name;
     const char *internal_name;
     uint32_t    flags; /* system flags */
-    uintptr_t   local; /* flags local to device */
+    uint64_t    local; /* flags local to device */
 
     void *(*init)(const struct _device_ *);
     void (*close)(void *priv);
@@ -202,6 +202,12 @@ extern void  device_context_restore(void);
 extern void *device_add(const device_t *dev);
 extern void *device_add_linked(const device_t *dev, void *priv);
 extern void *device_add_params(const device_t *dev, void *params);
+/*
+ * Like device_add_params(), but for local values that need bits beyond
+ * pointer width (e.g. NVR_IRQ_* uses bit 40+) - device_add_params() would
+ * silently truncate them through the void * round-trip on 32-bit hosts.
+ */
+extern void *device_add_params64(const device_t *dev, uint64_t params);
 extern void  device_add_ex(const device_t *dev, void *priv);
 extern void  device_add_ex_params(const device_t *dev, void *priv, void *params);
 extern void *device_add_inst(const device_t *dev, int inst);

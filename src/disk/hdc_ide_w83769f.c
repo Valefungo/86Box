@@ -50,7 +50,7 @@ typedef struct w83769f_t {
     uint8_t  regs[256];
 } w83769f_t;
 
-static int next_id = 0;
+static int ESP32_BIG_BSS_ATTR next_id = 0;
 
 #ifdef ENABLE_W83769F_LOG
 int w83769f_do_log = ENABLE_W83769F_LOG;

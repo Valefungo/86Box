@@ -1,0 +1,135 @@
+/*
+ * esp32_hid_xt_table.c - table definitions, see esp32_hid_xt_table.h.
+ *
+ * SDL scancodes are defined by SDL to numerically equal USB HID usage
+ * IDs for the keyboard page - this table is the same mapping the desktop
+ * build's src/unix/sdl_main.c uses (its `sdl_to_xt[SDL_SCANCODE_*]`
+ * array), just indexed by the raw HID usage byte instead of the
+ * SDL_SCANCODE_* symbolic name. Values above 0xFF use the 0x1xx
+ * "extended" convention keyboard_input() already expects (see
+ * src/device/keyboard.c: `(scan >> 8) == 0xe0` -> 0x1xx normalization) -
+ * same numeric values as the desktop table, not re-derived.
+ */
+#include "esp32_hid_xt_table.h"
+
+const uint16_t hid_usage_to_xt[256] = {
+    [0x29] = 0x01, /* Escape */
+    [0x1E] = 0x02, /* 1 */
+    [0x1F] = 0x03, /* 2 */
+    [0x20] = 0x04, /* 3 */
+    [0x21] = 0x05, /* 4 */
+    [0x22] = 0x06, /* 5 */
+    [0x23] = 0x07, /* 6 */
+    [0x24] = 0x08, /* 7 */
+    [0x25] = 0x09, /* 8 */
+    [0x26] = 0x0A, /* 9 */
+    [0x27] = 0x0B, /* 0 */
+    [0x2D] = 0x0C, /* - */
+    [0x2E] = 0x0D, /* = */
+    [0x2A] = 0x0E, /* Backspace */
+    [0x2B] = 0x0F, /* Tab */
+    [0x14] = 0x10, /* Q */
+    [0x1A] = 0x11, /* W */
+    [0x08] = 0x12, /* E */
+    [0x15] = 0x13, /* R */
+    [0x17] = 0x14, /* T */
+    [0x1C] = 0x15, /* Y */
+    [0x18] = 0x16, /* U */
+    [0x0C] = 0x17, /* I */
+    [0x12] = 0x18, /* O */
+    [0x13] = 0x19, /* P */
+    [0x2F] = 0x1A, /* [ */
+    [0x30] = 0x1B, /* ] */
+    [0x28] = 0x1C, /* Enter */
+    [0xE0] = 0x1D, /* Left Ctrl */
+    [0x04] = 0x1E, /* A */
+    [0x16] = 0x1F, /* S */
+    [0x07] = 0x20, /* D */
+    [0x09] = 0x21, /* F */
+    [0x0A] = 0x22, /* G */
+    [0x0B] = 0x23, /* H */
+    [0x0D] = 0x24, /* J */
+    [0x0E] = 0x25, /* K */
+    [0x0F] = 0x26, /* L */
+    [0x33] = 0x27, /* ; */
+    [0x34] = 0x28, /* ' */
+    [0x35] = 0x29, /* ` */
+    [0xE1] = 0x2A, /* Left Shift */
+    [0x31] = 0x2B, /* \ */
+    [0x1D] = 0x2C, /* Z */
+    [0x1B] = 0x2D, /* X */
+    [0x06] = 0x2E, /* C */
+    [0x19] = 0x2F, /* V */
+    [0x05] = 0x30, /* B */
+    [0x11] = 0x31, /* N */
+    [0x10] = 0x32, /* M */
+    [0x36] = 0x33, /* , */
+    [0x37] = 0x34, /* . */
+    [0x38] = 0x35, /* / */
+    [0xE5] = 0x36, /* Right Shift */
+    [0x55] = 0x37, /* Keypad * */
+    [0xE2] = 0x38, /* Left Alt */
+    [0x2C] = 0x39, /* Space */
+    [0x39] = 0x3A, /* Caps Lock */
+    [0x3A] = 0x3B, /* F1 */
+    [0x3B] = 0x3C, /* F2 */
+    [0x3C] = 0x3D, /* F3 */
+    [0x3D] = 0x3E, /* F4 */
+    [0x3E] = 0x3F, /* F5 */
+    [0x3F] = 0x40, /* F6 */
+    [0x40] = 0x41, /* F7 */
+    [0x41] = 0x42, /* F8 */
+    [0x42] = 0x43, /* F9 */
+    [0x43] = 0x44, /* F10 */
+    [0x53] = 0x45, /* Num Lock */
+    [0x47] = 0x46, /* Scroll Lock */
+    [0x4A] = 0x147, /* Home */
+    [0x52] = 0x148, /* Up */
+    [0x4B] = 0x149, /* Page Up */
+    [0x56] = 0x4A, /* Keypad - */
+    [0x50] = 0x14B, /* Left */
+    [0x5D] = 0x4C, /* Keypad 5 */
+    [0x4F] = 0x14D, /* Right */
+    [0x57] = 0x4E, /* Keypad + */
+    [0x4D] = 0x14F, /* End */
+    [0x51] = 0x150, /* Down */
+    [0x4E] = 0x151, /* Page Down */
+    [0x49] = 0x152, /* Insert */
+    [0x4C] = 0x153, /* Delete */
+    [0x44] = 0x57, /* F11 */
+    [0x45] = 0x58, /* F12 */
+
+    [0x58] = 0x11C, /* Keypad Enter */
+    [0xE4] = 0x11D, /* Right Ctrl */
+    [0x54] = 0x135, /* Keypad / */
+    [0xE6] = 0x138, /* Right Alt */
+    [0x61] = 0x49, /* Keypad 9 */
+    [0x60] = 0x48, /* Keypad 8 */
+    [0x5F] = 0x47, /* Keypad 7 */
+    [0x5E] = 0x4D, /* Keypad 6 */
+    [0x5C] = 0x4B, /* Keypad 4 */
+    [0x5B] = 0x51, /* Keypad 3 */
+    [0x5A] = 0x50, /* Keypad 2 */
+    [0x59] = 0x4F, /* Keypad 1 */
+    [0x62] = 0x52, /* Keypad 0 */
+    [0x63] = 0x53, /* Keypad . */
+
+    [0xE3] = 0x15B, /* Left GUI */
+    [0xE7] = 0x15C, /* Right GUI */
+    [0x65] = 0x15D, /* Application */
+    [0x46] = 0x137, /* Print Screen */
+};
+
+/* USB HID boot-report modifier byte, bit N -> XT code. Same bit layout on
+ * both keyboard sources that report a modifier bitmask (USB HID boot
+ * protocol byte 0, and the Tab5 keyboard's HID-mode hid_modifier field). */
+const uint16_t hid_modifier_to_xt[8] = {
+    0x1D,  /* bit0: Left Ctrl  */
+    0x2A,  /* bit1: Left Shift */
+    0x38,  /* bit2: Left Alt   */
+    0x15B, /* bit3: Left GUI   */
+    0x11D, /* bit4: Right Ctrl */
+    0x36,  /* bit5: Right Shift*/
+    0x138, /* bit6: Right Alt  */
+    0x15C, /* bit7: Right GUI  */
+};

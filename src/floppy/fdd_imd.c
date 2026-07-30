@@ -63,8 +63,8 @@ typedef struct imd_t {
     uint8_t     track_buffer[2][25000];
 } imd_t;
 
-static imd_t *imd[FDD_NUM];
-static fdc_t *imd_fdc;
+static imd_t *ESP32_BIG_BSS_ATTR imd[FDD_NUM];
+static fdc_t *ESP32_BIG_BSS_ATTR imd_fdc;
 
 #ifdef ENABLE_IMD_LOG
 int imd_do_log = ENABLE_IMD_LOG;

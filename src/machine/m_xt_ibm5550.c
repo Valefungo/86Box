@@ -1572,9 +1572,9 @@ typedef struct epochkbd_t {
     pc_timer_t send_delay_timer;
 } epochkbd_t;
 
-static uint8_t key_queue[16]; /* buffer in the keyboard */
-static int     key_queue_start = 0;
-static int     key_queue_end   = 0;
+static uint8_t ESP32_BIG_BSS_ATTR key_queue[16]; /* buffer in the keyboard */
+static int     ESP32_BIG_BSS_ATTR key_queue_start = 0;
+static int     ESP32_BIG_BSS_ATTR key_queue_end   = 0;
 
 static void
 kbd_epoch_poll(void *priv)

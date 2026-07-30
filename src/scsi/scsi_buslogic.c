@@ -254,7 +254,7 @@ buslogic_log(const char *fmt, ...)
 #    define buslogic_log(fmt, ...)
 #endif
 
-static x54x_t reset_state = { 0 };
+static x54x_t ESP32_BIG_BSS_ATTR reset_state = { 0 };
 
 static char *
 BuslogicGetNVRFileName(buslogic_data_t *bl)
@@ -1094,8 +1094,8 @@ buslogic_ven_reset(void *priv)
     bl->ExtendedLUNCCBFormat = 0;
 }
 
-uint8_t buslogic_pci_regs[256];
-bar_t   buslogic_pci_bar[3];
+uint8_t ESP32_BIG_BSS_ATTR buslogic_pci_regs[256];
+bar_t   ESP32_BIG_BSS_ATTR buslogic_pci_bar[3];
 
 static void
 BuslogicBIOSUpdate(buslogic_data_t *bl)

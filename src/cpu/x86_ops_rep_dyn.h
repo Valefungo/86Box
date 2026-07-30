@@ -519,12 +519,12 @@
             if (cpu_state.abrt)                                                                                   \
                 return 1;                                                                                         \
             if (uncached)                                                                                         \
-                readlookup2[(uint32_t) (es + DEST_REG) >> 12] = old_rl2;                                          \
+                READLOOKUP2_SET((uint32_t) (es + DEST_REG) >> 12, old_rl2);                                          \
             temp2 = readmemb_n(es, DEST_REG, addr64_2);                                                           \
             if (cpu_state.abrt)                                                                                   \
                 return 1;                                                                                         \
             if (uncached)                                                                                         \
-                readlookup2[(uint32_t) (es + DEST_REG) >> 12] = (uintptr_t) LOOKUP_INV;                           \
+                READLOOKUP2_INVALIDATE((uint32_t) (es + DEST_REG) >> 12);                           \
                                                                                                                   \
             if (cpu_state.flags & D_FLAG) {                                                                       \
                 DEST_REG--;                                                                                       \
@@ -570,12 +570,12 @@
             if (cpu_state.abrt)                                                                                   \
                 return 1;                                                                                         \
             if (uncached)                                                                                         \
-                readlookup2[(uint32_t) (es + DEST_REG) >> 12] = old_rl2;                                          \
+                READLOOKUP2_SET((uint32_t) (es + DEST_REG) >> 12, old_rl2);                                          \
             temp2 = readmemw_n(es, DEST_REG, addr64a_2);                                                          \
             if (cpu_state.abrt)                                                                                   \
                 return 1;                                                                                         \
             if (uncached)                                                                                         \
-                readlookup2[(uint32_t) (es + DEST_REG) >> 12] = (uintptr_t) LOOKUP_INV;                           \
+                READLOOKUP2_INVALIDATE((uint32_t) (es + DEST_REG) >> 12);                           \
                                                                                                                   \
             if (cpu_state.flags & D_FLAG) {                                                                       \
                 DEST_REG -= 2;                                                                                    \
@@ -621,12 +621,12 @@
             if (cpu_state.abrt)                                                                                   \
                 return 1;                                                                                         \
             if (uncached)                                                                                         \
-                readlookup2[(uint32_t) (es + DEST_REG) >> 12] = old_rl2;                                          \
+                READLOOKUP2_SET((uint32_t) (es + DEST_REG) >> 12, old_rl2);                                          \
             temp2 = readmeml_n(es, DEST_REG, addr64a_2);                                                          \
             if (cpu_state.abrt)                                                                                   \
                 return 1;                                                                                         \
             if (uncached)                                                                                         \
-                readlookup2[(uint32_t) (es + DEST_REG) >> 12] = (uintptr_t) LOOKUP_INV;                           \
+                READLOOKUP2_INVALIDATE((uint32_t) (es + DEST_REG) >> 12);                           \
                                                                                                                   \
             if (cpu_state.flags & D_FLAG) {                                                                       \
                 DEST_REG -= 4;                                                                                    \

@@ -239,12 +239,12 @@ opCMPSB_a16(UNUSED(uint32_t fetchdat))
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + DI) >> 12] = old_rl2;
+        READLOOKUP2_SET((uint32_t) (es + DI) >> 12, old_rl2);
     dst = readmemb_n(es, DI, addr64_2);
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + DI) >> 12] = (uintptr_t) LOOKUP_INV;
+        READLOOKUP2_INVALIDATE((uint32_t) (es + DI) >> 12);
     setsub8(src, dst);
     if (cpu_state.flags & D_FLAG) {
         DI--;
@@ -280,12 +280,12 @@ opCMPSB_a32(UNUSED(uint32_t fetchdat))
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + EDI) >> 12] = old_rl2;
+        READLOOKUP2_SET((uint32_t) (es + EDI) >> 12, old_rl2);
     dst = readmemb_n(es, EDI, addr64_2);
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + EDI) >> 12] = (uintptr_t) LOOKUP_INV;
+        READLOOKUP2_INVALIDATE((uint32_t) (es + EDI) >> 12);
     setsub8(src, dst);
     if (cpu_state.flags & D_FLAG) {
         EDI--;
@@ -323,12 +323,12 @@ opCMPSW_a16(UNUSED(uint32_t fetchdat))
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + DI) >> 12] = old_rl2;
+        READLOOKUP2_SET((uint32_t) (es + DI) >> 12, old_rl2);
     dst = readmemw_n(es, DI, addr64a_2);
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + DI) >> 12] = (uintptr_t) LOOKUP_INV;
+        READLOOKUP2_INVALIDATE((uint32_t) (es + DI) >> 12);
     setsub16(src, dst);
     if (cpu_state.flags & D_FLAG) {
         DI -= 2;
@@ -365,12 +365,12 @@ opCMPSW_a32(UNUSED(uint32_t fetchdat))
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + EDI) >> 12] = old_rl2;
+        READLOOKUP2_SET((uint32_t) (es + EDI) >> 12, old_rl2);
     dst = readmemw_n(es, EDI, addr64a_2);
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + EDI) >> 12] = (uintptr_t) LOOKUP_INV;
+        READLOOKUP2_INVALIDATE((uint32_t) (es + EDI) >> 12);
     setsub16(src, dst);
     if (cpu_state.flags & D_FLAG) {
         EDI -= 2;
@@ -408,12 +408,12 @@ opCMPSL_a16(UNUSED(uint32_t fetchdat))
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + DI) >> 12] = old_rl2;
+        READLOOKUP2_SET((uint32_t) (es + DI) >> 12, old_rl2);
     dst = readmeml_n(es, DI, addr64a_2);
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + DI) >> 12] = (uintptr_t) LOOKUP_INV;
+        READLOOKUP2_INVALIDATE((uint32_t) (es + DI) >> 12);
     setsub32(src, dst);
     if (cpu_state.flags & D_FLAG) {
         DI -= 4;
@@ -450,12 +450,12 @@ opCMPSL_a32(UNUSED(uint32_t fetchdat))
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + EDI) >> 12] = old_rl2;
+        READLOOKUP2_SET((uint32_t) (es + EDI) >> 12, old_rl2);
     dst = readmeml_n(es, EDI, addr64a_2);
     if (cpu_state.abrt)
         return 1;
     if (uncached)
-        readlookup2[(uint32_t) (es + EDI) >> 12] = (uintptr_t) LOOKUP_INV;
+        READLOOKUP2_INVALIDATE((uint32_t) (es + EDI) >> 12);
     setsub32(src, dst);
     if (cpu_state.flags & D_FLAG) {
         EDI -= 4;

@@ -25,6 +25,9 @@ these four paragraphs for those parts of this code that are retained.
 
 #define FLOAT128
 
+#include <cstdint>
+#include <cstdio>
+#include <86box/86box.h>
 #include "config.h"
 #include "specialize.h"
 
@@ -50,7 +53,7 @@ static const float128_t float128_ln2   =
 
 #define EXP_ARR_SIZE 15
 
-static float128_t exp_arr[EXP_ARR_SIZE] =
+static float128_t ESP32_BIG_BSS_ATTR exp_arr[EXP_ARR_SIZE] =
 {
     PACK_FLOAT_128(0x3fff000000000000, 0x0000000000000000), /*  1 */
     PACK_FLOAT_128(0x3ffe000000000000, 0x0000000000000000), /*  2 */

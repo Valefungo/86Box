@@ -1572,7 +1572,7 @@ machine_at_hot433a_init(const machine_t *model)
     device_context_restore();
 
     machine_at_common_init(model);
-    device_add_params(&nvr_at_device, (void *) (uintptr_t) (is_award ? (NVR_AT_ZERO_DEFAULT) : (NVR_AMI_1994)));
+    device_add_params64(&nvr_at_device, is_award ? (NVR_AT_ZERO_DEFAULT) : (NVR_AMI_1994));
 
     pci_init(PCI_CONFIG_TYPE_1);
     pci_register_slot(0x10, PCI_CARD_NORTHBRIDGE, 0, 0, 0, 0);

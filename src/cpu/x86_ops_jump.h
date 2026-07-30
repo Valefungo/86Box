@@ -277,6 +277,34 @@ opJMP_far_a16(uint32_t fetchdat)
     uint32_t old_pc;
 
     addr = getwordf();
+#ifdef CLAUDE_LOG
+    {
+        static int done = 0;
+        if (!done) {
+            done = 1;
+            uint32_t segaddr = cs + cpu_state.pc;
+            uint8_t  direct_lo = mem_readb_phys(segaddr);
+            uint8_t  direct_hi = mem_readb_phys(segaddr + 1);
+            uint8_t *biased_lo = NULL, *biased_hi = NULL;
+            uint16_t biased_val = 0xFFFF;
+            if (PCCACHE_VALID(segaddr)) {
+                biased_lo  = (uint8_t *) PTR_RECOMBINE(&pccache2[segaddr], &pccache2[0]);
+                biased_hi  = (uint8_t *) PTR_RECOMBINE(&pccache2[segaddr + 1], &pccache2[0]);
+                biased_val = mem_load_u16_unaligned((void *) PTR_RECOMBINE(&pccache2[segaddr], &pccache2[0]));
+            }
+            pclog("# opJMP_far_a16 FIRST CALL: addr=%04X cs_base=%08X pc=%08X segaddr=%08X "
+                  "pccache=%08X pccache2=%p pccache_valid=%d "
+                  "direct_bytes=%02X %02X biased_ptr_lo=%p biased_ptr_hi=%p biased_deref=%02X %02X "
+                  "mem_load_u16_unaligned=%04X\n",
+                  addr, cs, cpu_state.pc, segaddr,
+                  (unsigned) pccache, (void *) pccache2, PCCACHE_VALID(segaddr),
+                  direct_lo, direct_hi,
+                  (void *) biased_lo, (void *) biased_hi,
+                  biased_lo ? *biased_lo : 0xFF, biased_hi ? *biased_hi : 0xFF,
+                  biased_val);
+        }
+    }
+#endif
     seg  = getword();
     if (cpu_state.abrt)
         return 1;

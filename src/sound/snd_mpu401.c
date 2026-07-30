@@ -44,7 +44,7 @@ enum {
     STATUS_INPUT_NOT_READY  = 0x80
 };
 
-int mpu401_standalone_enable = 0;
+int ESP32_BIG_BSS_ATTR mpu401_standalone_enable = 0;
 
 static void MPU401_WriteCommand(mpu_t *mpu, uint8_t val);
 static void MPU401_WriteData(mpu_t *mpu, uint8_t val);

@@ -102,7 +102,7 @@ struct unittester_state {
     /* 0x04: Exit */
     uint8_t exit_code;
 };
-static struct unittester_state unittester;
+static struct unittester_state ESP32_BIG_BSS_ATTR unittester;
 static struct unittester_state unittester_defaults = {
     .trigger_port = 0x0080,
     .iobase_port  = 0xFFFF,
@@ -113,7 +113,7 @@ static struct unittester_state unittester_defaults = {
 };
 
 /* Kept separate, as we will be reusing this object */
-static bitmap_t *unittester_screen_buffer = NULL;
+static bitmap_t *ESP32_BIG_BSS_ATTR unittester_screen_buffer = NULL;
 
 static bool unittester_exit_enabled = true;
 
@@ -583,7 +583,7 @@ unittester_init(UNUSED(const device_t *info))
     unittester_exit_enabled = !!device_get_config_int("exit_enabled");
 
     if (unittester_screen_buffer == NULL)
-        unittester_screen_buffer = create_bitmap(2048, 2048);
+        unittester_screen_buffer = create_bitmap(1024, 1024);
 
     io_sethandler(unittester.trigger_port, 1, NULL, NULL, NULL, unittester_trigger_write, NULL, NULL, NULL);
 

@@ -26,8 +26,7 @@ add_library(vid OBJECT
     ramdac/vid_ramdac_ati68875.c 
     ramdac/vid_ramdac_att20c49x.c
     ramdac/vid_ramdac_att2xc498.c
-    ramdac/vid_ramdac_bt48x.c 
-    ramdac/vid_ramdac_bt481.c 
+    ramdac/vid_ramdac_bt481.c
     ramdac/vid_ramdac_ibm_rgb528.c
     ramdac/vid_ramdac_sc1148x.c 
     ramdac/vid_ramdac_sc1502x.c 
@@ -94,9 +93,6 @@ add_library(vid OBJECT
     vid_ati_mach64.c
     vid_ati_mach64_accel.c
 
-    # Chips & Technologies
-    vid_chips_69000.c
-
     # Cirrus Logic
     vid_cl54xx.c
 
@@ -117,10 +113,6 @@ add_library(vid OBJECT
     # Trident
     vid_tvga.c
     vid_tgui9440.c
-
-    # S3 Graphics
-    vid_s3.c
-    vid_s3_virge.c
 
     # Matrox
     vid_mga.c

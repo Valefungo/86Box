@@ -246,8 +246,8 @@ static const uint8_t encoded_mfm[64] = {
     0x4a, 0x49, 0x44, 0x45, 0x52, 0x51, 0x54, 0x55
 };
 
-static d86f_t  *d86f[FDD_NUM];
-static fdc_t   *d86f_fdc;
+static d86f_t  *ESP32_BIG_BSS_ATTR d86f[FDD_NUM];
+static fdc_t   *ESP32_BIG_BSS_ATTR d86f_fdc;
 uint64_t        poly = 0x42F0E1EBA9EA3693LL; /* ECMA normal */
 
 uint16_t d86f_side_flags(int drive);

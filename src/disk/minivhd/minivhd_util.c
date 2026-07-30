@@ -49,6 +49,7 @@
 #include "minivhd.h"
 #include "internal.h"
 #include "xml2_encoding.h"
+#include <86box/86box.h>
 
 
 uint16_t
@@ -443,7 +444,7 @@ mvhd_crc32_for_byte(uint32_t r)
 uint32_t
 mvhd_crc32(const void* data, size_t n_bytes)
 {
-    static uint32_t table[0x100];
+    static uint32_t ESP32_BIG_BSS_ATTR table[0x100];
 
     if (!*table)
         for (size_t i = 0; i < 0x100; ++i)

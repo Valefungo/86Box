@@ -45,14 +45,14 @@ typedef struct {
     void *priv;
 } sound_handler_t;
 
-int  sound_card_current[SOUND_CARD_MAX] = { 0, 0, 0, 0 };
-int  sound_pos_global                   = 0;
+int  ESP32_BIG_BSS_ATTR sound_card_current[SOUND_CARD_MAX] = { 0, 0, 0, 0 };
+int  ESP32_BIG_BSS_ATTR sound_pos_global                   = 0;
 static int sound_buf_len                = SOUNDBUFLEN;
-int  music_pos_global                   = 0;
-int  ym2151_pos_global                  = 0;
-int  wavetable_pos_global               = 0;
-int  sound_gain                         = 0;
-char sound_output_device[512]           = { 0 };
+int  ESP32_BIG_BSS_ATTR music_pos_global                   = 0;
+int  ESP32_BIG_BSS_ATTR ym2151_pos_global                  = 0;
+int  ESP32_BIG_BSS_ATTR wavetable_pos_global               = 0;
+int  ESP32_BIG_BSS_ATTR sound_gain                         = 0;
+char ESP32_BIG_BSS_ATTR sound_output_device[512]           = { 0 };
 
 int  midi_freq                          = 44100;
 int  midi_buf_size                      = 4410;
@@ -66,73 +66,73 @@ unsigned long long src_freqs[I_MAX] = {
 #define NUM_YM2151_HANDLERS 16
 #define NUM_WAVETABLE_HANDLERS 16
 
-static sound_handler_t sound_handlers[NUM_SOUND_HANDLERS];
-static sound_handler_t music_handlers[NUM_MUSIC_HANDLERS];
-static sound_handler_t ym2151_handlers[NUM_YM2151_HANDLERS];
-static sound_handler_t wavetable_handlers[NUM_WAVETABLE_HANDLERS];
+static sound_handler_t ESP32_BIG_BSS_ATTR sound_handlers[NUM_SOUND_HANDLERS];
+static sound_handler_t ESP32_BIG_BSS_ATTR music_handlers[NUM_MUSIC_HANDLERS];
+static sound_handler_t ESP32_BIG_BSS_ATTR ym2151_handlers[NUM_YM2151_HANDLERS];
+static sound_handler_t ESP32_BIG_BSS_ATTR wavetable_handlers[NUM_WAVETABLE_HANDLERS];
 
-static double     cd_audio_volume_lut[256];
+static double     ESP32_BIG_BSS_ATTR cd_audio_volume_lut[256];
 
-static thread_t  *sound_cd_thread_h;
-static event_t   *sound_cd_event;
-static event_t   *sound_cd_start_event;
-static int32_t   *outbuffer;
-static float     *outbuffer_ex;
-static int16_t   *outbuffer_ex_int16;
-static int32_t   *outbuffer_m;
-static float     *outbuffer_m_ex;
-static int16_t   *outbuffer_m_ex_int16;
-static int32_t   *outbuffer_y;
-static float     *outbuffer_y_ex;
-static int16_t   *outbuffer_y_ex_int16;
-static int32_t   *outbuffer_w;
-static float     *outbuffer_w_ex;
-static int16_t   *outbuffer_w_ex_int16;
+static thread_t  ESP32_BIG_BSS_ATTR *sound_cd_thread_h;
+static event_t   ESP32_BIG_BSS_ATTR *sound_cd_event;
+static event_t   ESP32_BIG_BSS_ATTR *sound_cd_start_event;
+static int32_t   ESP32_BIG_BSS_ATTR *outbuffer;
+static float     ESP32_BIG_BSS_ATTR *outbuffer_ex;
+static int16_t   ESP32_BIG_BSS_ATTR *outbuffer_ex_int16;
+static int32_t   ESP32_BIG_BSS_ATTR *outbuffer_m;
+static float     ESP32_BIG_BSS_ATTR *outbuffer_m_ex;
+static int16_t   ESP32_BIG_BSS_ATTR *outbuffer_m_ex_int16;
+static int32_t   ESP32_BIG_BSS_ATTR *outbuffer_y;
+static float     ESP32_BIG_BSS_ATTR *outbuffer_y_ex;
+static int16_t   ESP32_BIG_BSS_ATTR *outbuffer_y_ex_int16;
+static int32_t   ESP32_BIG_BSS_ATTR *outbuffer_w;
+static float     ESP32_BIG_BSS_ATTR *outbuffer_w_ex;
+static int16_t   ESP32_BIG_BSS_ATTR *outbuffer_w_ex_int16;
 static uint8_t    sound_handlers_num;
 static uint8_t    music_handlers_num;
 static uint8_t    ym2151_handlers_num;
 static uint8_t    wavetable_handlers_num;
-static pc_timer_t cd_poll_timer;
-static uint64_t   cd_poll_latch;
-static pc_timer_t midi_poll_timer;
-static uint64_t   midi_poll_latch;
-static pc_timer_t sound_poll_timer;
-static uint64_t   sound_poll_latch;
-static pc_timer_t music_poll_timer;
-static uint64_t   music_poll_latch;
-static pc_timer_t ym2151_poll_timer;
-static uint64_t   ym2151_poll_latch;
-static pc_timer_t wavetable_poll_timer;
-static uint64_t   wavetable_poll_latch;
+static pc_timer_t ESP32_BIG_BSS_ATTR cd_poll_timer;
+static uint64_t   ESP32_BIG_BSS_ATTR cd_poll_latch;
+static pc_timer_t ESP32_BIG_BSS_ATTR midi_poll_timer;
+static uint64_t   ESP32_BIG_BSS_ATTR midi_poll_latch;
+static pc_timer_t ESP32_BIG_BSS_ATTR sound_poll_timer;
+static uint64_t   ESP32_BIG_BSS_ATTR sound_poll_latch;
+static pc_timer_t ESP32_BIG_BSS_ATTR music_poll_timer;
+static uint64_t   ESP32_BIG_BSS_ATTR music_poll_latch;
+static pc_timer_t ESP32_BIG_BSS_ATTR ym2151_poll_timer;
+static uint64_t   ESP32_BIG_BSS_ATTR ym2151_poll_latch;
+static pc_timer_t ESP32_BIG_BSS_ATTR wavetable_poll_timer;
+static uint64_t   ESP32_BIG_BSS_ATTR wavetable_poll_latch;
 
-static int16_t      cd_buffer[CDROM_NUM][CD_BUFLEN * 2];
-static float        cd_out_buffer[CD_BUFLEN * 2];
-static int16_t      cd_out_buffer_int16[CD_BUFLEN * 2];
-static unsigned int cd_vol_l;
-static unsigned int cd_vol_r;
-static volatile int cdaudioon        = 0;
-static int          cd_thread_enable = 0;
+static int16_t      ESP32_BIG_BSS_ATTR cd_buffer[CDROM_NUM][CD_BUFLEN * 2];
+static float        ESP32_BIG_BSS_ATTR cd_out_buffer[CD_BUFLEN * 2];
+static int16_t      ESP32_BIG_BSS_ATTR cd_out_buffer_int16[CD_BUFLEN * 2];
+static unsigned int ESP32_BIG_BSS_ATTR cd_vol_l;
+static unsigned int ESP32_BIG_BSS_ATTR cd_vol_r;
+static volatile int ESP32_BIG_BSS_ATTR cdaudioon        = 0;
+static int          ESP32_BIG_BSS_ATTR cd_thread_enable = 0;
 
-static thread_t     *sound_fdd_thread_h;
-static event_t      *sound_fdd_event;
-static event_t      *sound_fdd_start_event;
-static volatile int fddaudioon = 0;
-static int          fdd_thread_enable = 0;
+static thread_t     ESP32_BIG_BSS_ATTR *sound_fdd_thread_h;
+static event_t      ESP32_BIG_BSS_ATTR *sound_fdd_event;
+static event_t      ESP32_BIG_BSS_ATTR *sound_fdd_start_event;
+static volatile int ESP32_BIG_BSS_ATTR fddaudioon = 0;
+static int          ESP32_BIG_BSS_ATTR fdd_thread_enable = 0;
 
-static thread_t     *sound_hdd_thread_h;
-static event_t      *sound_hdd_event;
-static event_t      *sound_hdd_start_event;
-static volatile int hddaudioon = 0;
-static int          hdd_thread_enable = 0;
+static thread_t     ESP32_BIG_BSS_ATTR *sound_hdd_thread_h;
+static event_t      ESP32_BIG_BSS_ATTR *sound_hdd_event;
+static event_t      ESP32_BIG_BSS_ATTR *sound_hdd_start_event;
+static volatile int ESP32_BIG_BSS_ATTR hddaudioon = 0;
+static int          ESP32_BIG_BSS_ATTR hdd_thread_enable = 0;
 
-static void (*filter_cd_audio)(int channel, double *buffer, void *priv) = NULL;
-static void *filter_cd_audio_p                                          = NULL;
+static void ESP32_BIG_BSS_ATTR (*filter_cd_audio)(int channel, double *buffer, void *priv) = NULL;
+static void ESP32_BIG_BSS_ATTR *filter_cd_audio_p                                          = NULL;
 
-void (*filter_pc_speaker)(int channel, double *buffer, void *priv) = NULL;
-void *filter_pc_speaker_p                                          = NULL;
+void ESP32_BIG_BSS_ATTR (*filter_pc_speaker)(int channel, double *buffer, void *priv) = NULL;
+void ESP32_BIG_BSS_ATTR *filter_pc_speaker_p                                          = NULL;
 
-void (*filter_midi)(int channel, double *buffer, void *priv) = NULL;
-void *filter_midi_p                                          = NULL;
+void ESP32_BIG_BSS_ATTR (*filter_midi)(int channel, double *buffer, void *priv) = NULL;
+void ESP32_BIG_BSS_ATTR *filter_midi_p                                          = NULL;
 
 static const SOUND_CARD sound_cards[] = {
     // clang-format off
@@ -934,7 +934,7 @@ sound_fdd_thread(UNUSED(void *param))
         if (!fddaudioon)
             break;
 
-        static float fdd_float_buffer[SOUNDBUFLEN * 2];
+        static float ESP32_BIG_BSS_ATTR fdd_float_buffer[SOUNDBUFLEN * 2];
         memset(fdd_float_buffer, 0, sizeof(fdd_float_buffer));
         fdd_audio_callback((int16_t*)fdd_float_buffer, SOUNDBUFLEN * 2);
         givealbuffer_fdd(fdd_float_buffer, SOUNDBUFLEN * 2);
@@ -992,7 +992,7 @@ sound_hdd_thread(UNUSED(void *param))
         if (!hddaudioon)
             break;
 
-        static float hdd_float_buffer[SOUNDBUFLEN * 2];
+        static float ESP32_BIG_BSS_ATTR hdd_float_buffer[SOUNDBUFLEN * 2];
         memset(hdd_float_buffer, 0, sizeof(hdd_float_buffer));
         hdd_audio_callback((int16_t*)hdd_float_buffer, SOUNDBUFLEN * 2);
         givealbuffer_hdd(hdd_float_buffer, SOUNDBUFLEN * 2);

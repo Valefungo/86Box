@@ -63,7 +63,7 @@ const uint8_t id_bytes[24][4] = { { 0x00, 0x00, 0x00, 0x00 },    /* XT 83-key */
 
 /* Global keyboard flags for scan code set 3:
    bit 0 = repeat, bit 1 = makes break code? */
-uint8_t keyboard_set3_flags[512];
+uint8_t ESP32_BIG_BSS_ATTR keyboard_set3_flags[512];
 uint8_t keyboard_set3_all_repeat;
 uint8_t keyboard_set3_all_break;
 
@@ -71,13 +71,13 @@ uint8_t keyboard_set3_all_break;
    Bits 0 - 1 = scan code set. */
 uint8_t keyboard_mode = 0x02;
 
-static atkbc_dev_t *SavedKbd                        = NULL;
+static atkbc_dev_t *ESP32_BIG_BSS_ATTR SavedKbd                        = NULL;
 
 static uint8_t     inv_cmd_response                 = 0xfa;
 
-static int         is_special                       = 0;
+static int         ESP32_BIG_BSS_ATTR is_special                       = 0;
 
-static uint16_t    bat_counter                      = 0;
+static uint16_t    ESP32_BIG_BSS_ATTR bat_counter                      = 0;
 
 const scancode scancode_set1_at[512] = {
   // clang-format off

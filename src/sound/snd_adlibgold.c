@@ -93,7 +93,7 @@ typedef struct adgold_t {
     int finish_dma;
 } adgold_t;
 
-static int attenuation[0x40];
+static int ESP32_BIG_BSS_ATTR attenuation[0x40];
 static int bass_attenuation[0x10] = {
     (int) (1.995 * 16384), /*12 dB - filter output is at +6 dB so we use 6 dB here*/
     (int) (1.995 * 16384),

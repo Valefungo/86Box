@@ -30,7 +30,7 @@
 #include <86box/scsi_device.h>
 #include <86box/plat_unused.h>
 
-scsi_device_t scsi_devices[SCSI_BUS_MAX][SCSI_ID_MAX];
+scsi_device_t ESP32_BIG_BSS_ATTR scsi_devices[SCSI_BUS_MAX][SCSI_ID_MAX];
 int scsi_command_length[8] = { 6, 10, 10, 6, 16, 12, 10, 6 };
 uint8_t scsi_null_device_sense[18] = { 0x70, 0, SENSE_ILLEGAL_REQUEST, 0, 0, 0, 0, 0, 0, 0, 0, 0, ASC_INV_LUN, 0, 0, 0, 0, 0 };
 

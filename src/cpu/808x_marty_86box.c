@@ -4852,7 +4852,7 @@ m808x_86box_iret_complete(void)
 }
 
 void
-execx86_new(int cycs)
+execx86_new(int32_t cycs)
 {
     if (!m808x_initialized)
         m808x_86box_reset(1);

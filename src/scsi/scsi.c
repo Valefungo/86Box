@@ -40,8 +40,8 @@
 #include <86box/scsi_pcscsi.h>
 #include <86box/scsi_qlogic.h>
 
-int scsi_card_current[SCSI_CARD_MAX] = { 0, 0, 0, 0 };
-double scsi_bus_speed[SCSI_BUS_MAX] = { 0.0, 0.0, 0.0, 0.0 };
+int ESP32_BIG_BSS_ATTR scsi_card_current[SCSI_CARD_MAX] = { 0, 0, 0, 0 };
+double ESP32_BIG_BSS_ATTR scsi_bus_speed[SCSI_BUS_MAX] = { 0.0, 0.0, 0.0, 0.0 };
 
 static uint8_t next_scsi_bus = 0;
 

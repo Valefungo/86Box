@@ -38,6 +38,7 @@
 #endif
 
 #include <string.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -57,6 +58,7 @@
 #endif
 
 #include "cJSON.h"
+#include <86box/86box.h>
 
 /* define our own boolean type */
 #ifdef true
@@ -89,7 +91,7 @@ typedef struct {
     const unsigned char *json;
     size_t position;
 } error;
-static error global_error = { NULL, 0 };
+static error ESP32_BIG_BSS_ATTR global_error = { NULL, 0 };
 
 CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void)
 {
@@ -123,7 +125,7 @@ CJSON_PUBLIC(double) cJSON_GetNumberValue(const cJSON * const item)
 
 CJSON_PUBLIC(const char*) cJSON_Version(void)
 {
-    static char version[15];
+    static char ESP32_BIG_BSS_ATTR version[15];
     sprintf(version, "%i.%i.%i", CJSON_VERSION_MAJOR, CJSON_VERSION_MINOR, CJSON_VERSION_PATCH);
 
     return version;

@@ -31,18 +31,18 @@
 
 #include "cpu.h"
 
-uint16_t     scancode_map[768]        = { 0 };
-uint16_t     scancode_config_map[768] = { 0 };
+uint16_t     ESP32_BIG_BSS_ATTR scancode_map[768]        = { 0 };
+uint16_t     ESP32_BIG_BSS_ATTR scancode_config_map[768] = { 0 };
 
-int          keyboard_scan;
+int          ESP32_BIG_BSS_ATTR keyboard_scan;
 
 typedef struct keyboard_t {
     const device_t *device;
 } keyboard_t;
 
-int          keyboard_type    = 0;
+int          ESP32_BIG_BSS_ATTR keyboard_type    = 0;
 
-static int   override_capture = 0;
+static int   ESP32_BIG_BSS_ATTR override_capture = 0;
 
 static const device_t keyboard_internal_device = {
     .name          = "Internal",
@@ -88,15 +88,15 @@ kbc_at_log(const char* fmt, ...)
 #    define kbc_at_log(fmt, ...)
 #endif
 
-void (*keyboard_send)(uint16_t val);
+void (*ESP32_BIG_BSS_ATTR keyboard_send)(uint16_t val);
 
-static int recv_key[768] = { 0 }; /* keyboard input buffer */
-static int recv_key_ui[768] = { 0 }; /* keyboard input buffer */
-static int oldkey[768];
+static int ESP32_BIG_BSS_ATTR recv_key[768] = { 0 }; /* keyboard input buffer */
+static int ESP32_BIG_BSS_ATTR recv_key_ui[768] = { 0 }; /* keyboard input buffer */
+static int ESP32_BIG_BSS_ATTR oldkey[768];
 #if 0
 static int keydelay[768];
 #endif
-static scancode *scan_table; /* scancode table for keyboard */
+static scancode *ESP32_BIG_BSS_ATTR scan_table; /* scancode table for keyboard */
 
 static volatile uint8_t caps_lock    = 0;
 static volatile uint8_t num_lock     = 0;
@@ -105,7 +105,7 @@ static volatile uint8_t kana_lock    = 0;
 static volatile uint8_t kbd_in_reset = 0;
 static uint8_t shift                 = 0;
 
-static int key5576mode = 0;
+static int ESP32_BIG_BSS_ATTR key5576mode = 0;
 
 typedef struct {
     const uint16_t sc;

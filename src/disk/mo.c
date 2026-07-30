@@ -49,7 +49,7 @@
 
 #define IDE_ATAPI_IS_EARLY             id->sc->pad0
 
-mo_drive_t mo_drives[MO_NUM];
+mo_drive_t ESP32_BIG_BSS_ATTR mo_drives[MO_NUM];
 
 // clang-format off
 /*

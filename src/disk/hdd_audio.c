@@ -70,17 +70,17 @@ typedef struct {
 } hdd_audio_samples_t;
 
 /* Global audio profile configurations */
-static hdd_audio_profile_config_t audio_profiles[HDD_AUDIO_PROFILE_MAX];
-static int                        audio_profile_count = 0;
+static hdd_audio_profile_config_t ESP32_BIG_BSS_ATTR audio_profiles[HDD_AUDIO_PROFILE_MAX];
+static int                        ESP32_BIG_BSS_ATTR audio_profile_count = 0;
 
 /* Per-profile loaded samples */
-static hdd_audio_samples_t profile_samples[HDD_AUDIO_PROFILE_MAX];
+static hdd_audio_samples_t ESP32_BIG_BSS_ATTR profile_samples[HDD_AUDIO_PROFILE_MAX];
 
 /* Per-HDD audio states */
-static hdd_audio_drive_state_t drive_states[HDD_AUDIO_MAX_DRIVES];
-static int                     active_drive_count = 0;
+static hdd_audio_drive_state_t ESP32_BIG_BSS_ATTR drive_states[HDD_AUDIO_MAX_DRIVES];
+static int                     ESP32_BIG_BSS_ATTR active_drive_count = 0;
 
-static mutex_t *hdd_audio_mutex = NULL;
+static mutex_t *ESP32_BIG_BSS_ATTR hdd_audio_mutex = NULL;
 
 #ifdef ENABLE_HDD_AUDIO_LOG
 int hdd_audio_do_log = ENABLE_HDD_AUDIO_LOG;

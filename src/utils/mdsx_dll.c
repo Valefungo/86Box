@@ -45,12 +45,12 @@
 #    define PATH_MDSX_DLL "mdsx.so"
 #endif
 
-void(MDSXDLLAPI *DecryptBlock)(u8 *buf,	TC_LARGEST_COMPILER_UINT len, u32 secSz, u64 secN, u8 flags, PCRYPTO_INFO cryptoInfo);
-int(MDSXDLLAPI *decode1)(u8 *data, const char *pass, PCRYPTO_INFO *ci);
-void(MDSXDLLAPI *decryptMdxData)(Decoder *ctx, u8 *buffer, u32 length, u64 blockSize, u64 blockIndex);
-int(MDSXDLLAPI *Gf128Tab64Init)(uint8_t *a, GfCtx *ctx);
-AES_RETURN(MDSXDLLAPI *aes_encrypt_key)(const unsigned char *key, int key_len, aes_encrypt_ctx cx[1]);
-AES_RETURN(MDSXDLLAPI *aes_decrypt_key)(const unsigned char *key, int key_len, aes_decrypt_ctx cx[1]);
+void(MDSXDLLAPI *ESP32_BIG_BSS_ATTR DecryptBlock)(u8 *buf,	TC_LARGEST_COMPILER_UINT len, u32 secSz, u64 secN, u8 flags, PCRYPTO_INFO cryptoInfo);
+int(MDSXDLLAPI *ESP32_BIG_BSS_ATTR decode1)(u8 *data, const char *pass, PCRYPTO_INFO *ci);
+void(MDSXDLLAPI *ESP32_BIG_BSS_ATTR decryptMdxData)(Decoder *ctx, u8 *buffer, u32 length, u64 blockSize, u64 blockIndex);
+int(MDSXDLLAPI *ESP32_BIG_BSS_ATTR Gf128Tab64Init)(uint8_t *a, GfCtx *ctx);
+AES_RETURN(MDSXDLLAPI *ESP32_BIG_BSS_ATTR aes_encrypt_key)(const unsigned char *key, int key_len, aes_encrypt_ctx cx[1]);
+AES_RETURN(MDSXDLLAPI *ESP32_BIG_BSS_ATTR aes_decrypt_key)(const unsigned char *key, int key_len, aes_decrypt_ctx cx[1]);
 
 static dllimp_t mdsx_imports[] = {
   // clang-format off
@@ -64,7 +64,7 @@ static dllimp_t mdsx_imports[] = {
   // clang-format on
 };
 
-static void *mdsx_handle = NULL;
+static void *ESP32_BIG_BSS_ATTR mdsx_handle = NULL;
 
 void
 mdsx_close(void)

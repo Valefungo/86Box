@@ -7,8 +7,8 @@
 #include <86box/snd_ym7128.h>
 #include <86box/plat_unused.h>
 
-static int attenuation[32];
-static int tap_position[32];
+static int ESP32_BIG_BSS_ATTR attenuation[32];
+static int ESP32_BIG_BSS_ATTR tap_position[32];
 
 void
 ym7128_init(UNUSED(ym7128_t *ym7128))

@@ -41,17 +41,17 @@
 
 #define CAS_CLK 1193182
 
-pc_cassette_t *cassette;
+pc_cassette_t *ESP32_BIG_BSS_ATTR cassette;
 
-char          cassette_fname[MAX_IMAGE_PATH_LEN];
-char          cassette_mode[512];
-char *        cassette_image_history[CASSETTE_IMAGE_HISTORY];
-unsigned long cassette_pos;
-unsigned long cassette_srate;
-int           cassette_enable;
-int           cassette_append;
-int           cassette_pcm;
-int           cassette_ui_writeprot;
+char          ESP32_BIG_BSS_ATTR cassette_fname[MAX_IMAGE_PATH_LEN];
+char          ESP32_BIG_BSS_ATTR cassette_mode[512];
+char *        ESP32_BIG_BSS_ATTR cassette_image_history[CASSETTE_IMAGE_HISTORY];
+unsigned long ESP32_BIG_BSS_ATTR cassette_pos;
+unsigned long ESP32_BIG_BSS_ATTR cassette_srate;
+int           ESP32_BIG_BSS_ATTR cassette_enable;
+int           ESP32_BIG_BSS_ATTR cassette_append;
+int           ESP32_BIG_BSS_ATTR cassette_pcm;
+int           ESP32_BIG_BSS_ATTR cassette_ui_writeprot;
 
 static int cassette_cycles = -1;
 

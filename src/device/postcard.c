@@ -27,17 +27,17 @@
 #include <86box/postcard.h>
 #include "cpu.h"
 
-uint8_t         postcard_codes[POSTCARDS_NUM];
-char            postcard_diags[5] = { 0 };
+uint8_t         ESP32_BIG_BSS_ATTR postcard_codes[POSTCARDS_NUM];
+char            ESP32_BIG_BSS_ATTR postcard_diags[5] = { 0 };
 
-static uint16_t postcard_port;
-static uint8_t  postcard_written[POSTCARDS_NUM];
+static uint16_t ESP32_BIG_BSS_ATTR postcard_port;
+static uint8_t  ESP32_BIG_BSS_ATTR postcard_written[POSTCARDS_NUM];
 static uint8_t  postcard_ports_num = 1;
-static uint8_t  postcard_prev_codes[POSTCARDS_NUM];
+static uint8_t  ESP32_BIG_BSS_ATTR postcard_prev_codes[POSTCARDS_NUM];
 static uint8_t  postcard_dell_mode = 0;
-static char     postcard_prev_diags[5] = { 0 };
+static char     ESP32_BIG_BSS_ATTR postcard_prev_diags[5] = { 0 };
 #define UISTR_LEN 32
-static char postcard_str[UISTR_LEN]; /* UI output string */
+static char ESP32_BIG_BSS_ATTR postcard_str[UISTR_LEN]; /* UI output string */
 
 extern void ui_sb_bugui(char *__str);
 

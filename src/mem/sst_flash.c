@@ -59,7 +59,7 @@ typedef struct sst_t {
     pc_timer_t page_write_timer;
 } sst_t;
 
-static char flash_path[1024];
+static char ESP32_BIG_BSS_ATTR flash_path[1024];
 
 #define SST_CHIP_ERASE      0x10 /* Both 29 and 39, 6th cycle */
 #define SST_SDP_DISABLE     0x20 /* Only 29, Software data protect disable and write - treat as write */

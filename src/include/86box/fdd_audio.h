@@ -140,6 +140,14 @@ typedef struct {
 
 #define FDD_AUDIO_PROFILE_MAX 1
 
+/* fdd_audio.c's own #else branch already defines working stubs for these
+ * (and a few more no external caller needs) - they just weren't declared
+ * here, causing implicit-declaration errors in config.c/fdd.c. */
+extern void        fdd_audio_load_profiles(void);
+extern const char *fdd_audio_get_profile_internal_name(int id);
+extern int         fdd_audio_get_profile_by_internal_name(const char *internal_name);
+extern double      fdd_audio_get_seek_time(int drive, int track_count, int is_seek_down);
+
 #endif /* DISABLE_FDD_AUDIO */
 
 /* FDD audio initialization and cleanup */

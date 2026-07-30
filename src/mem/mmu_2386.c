@@ -80,7 +80,7 @@ mem_debug_check_addr(uint32_t addr, int flags)
 uint8_t
 mem_readb_map(uint32_t addr)
 {
-    mem_mapping_t *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t *map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     uint8_t        ret = 0xff;
 
     mem_logical_addr = 0xffffffff;
@@ -94,7 +94,7 @@ mem_readb_map(uint32_t addr)
 uint16_t
 mem_readw_map(uint32_t addr)
 {
-    mem_mapping_t  *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t  *map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     uint16_t        ret;
 
     mem_logical_addr = 0xffffffff;
@@ -112,7 +112,7 @@ mem_readw_map(uint32_t addr)
 uint32_t
 mem_readl_map(uint32_t addr)
 {
-    mem_mapping_t  *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t  *map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     uint32_t        ret;
 
     mem_logical_addr = 0xffffffff;
@@ -130,7 +130,7 @@ mem_readl_map(uint32_t addr)
 void
 mem_writeb_map(uint32_t addr, uint8_t val)
 {
-    mem_mapping_t *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t *map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     mem_logical_addr = 0xffffffff;
 
@@ -141,7 +141,7 @@ mem_writeb_map(uint32_t addr, uint8_t val)
 void
 mem_writew_map(uint32_t addr, uint16_t val)
 {
-    mem_mapping_t  *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t  *map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     mem_logical_addr = 0xffffffff;
 
@@ -156,7 +156,7 @@ mem_writew_map(uint32_t addr, uint16_t val)
 void
 mem_writel_map(uint32_t addr, uint32_t val)
 {
-    mem_mapping_t  *map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    mem_mapping_t  *map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     mem_logical_addr = 0xffffffff;
 
@@ -295,7 +295,7 @@ readmembl_2386(uint32_t addr)
     }
     addr = (uint32_t) (addr64 & rammask);
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->read_b)
         return map->read_b(addr, map->priv);
 
@@ -326,7 +326,7 @@ writemembl_2386(uint32_t addr, uint8_t val)
     }
     addr = (uint32_t) (addr64 & rammask);
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->write_b)
         map->write_b(addr, val, map->priv);
 }
@@ -350,7 +350,7 @@ readmembl_no_mmut_2386(uint32_t addr, uint32_t a64)
     } else
         addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->read_b)
         return map->read_b(addr, map->priv);
 
@@ -376,7 +376,7 @@ writemembl_no_mmut_2386(uint32_t addr, uint32_t a64, uint8_t val)
     } else
         addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
     if (map && map->write_b)
         map->write_b(addr, val, map->priv);
 }
@@ -428,7 +428,7 @@ readmemwl_2386(uint32_t addr)
 
     addr = addr64a[0] & rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_w)
         return map->read_w(addr, map->priv);
@@ -465,7 +465,7 @@ writememwl_2386(uint32_t addr, uint16_t val)
                 for (uint8_t i = 0; i < 2; i++) {
                     /* Do not translate a page that has a valid lookup, as that is by definition valid
                        and the whole purpose of the lookup is to avoid repeat identical translations. */
-                    if (!page_lookup[(addr + i) >> 12] || !page_lookup[(addr + i) >> 12]->write_b) {
+                    if (!PAGE_LOOKUP_GET((addr + i) >> 12) || !PAGE_LOOKUP_GET((addr + i) >> 12)->write_b) {
                         a          = mmutranslate_write_2386(addr + i);
                         addr64a[i] = (uint32_t) a;
 
@@ -493,7 +493,7 @@ writememwl_2386(uint32_t addr, uint16_t val)
 
     addr = addr64a[0] & rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_w) {
         map->write_w(addr, val, map->priv);
@@ -540,7 +540,7 @@ readmemwl_no_mmut_2386(uint32_t addr, uint32_t *a64)
     } else
         addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_w)
         return map->read_w(addr, map->priv);
@@ -586,7 +586,7 @@ writememwl_no_mmut_2386(uint32_t addr, uint32_t *a64, uint16_t val)
     } else
         addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_w) {
         map->write_w(addr, val, map->priv);
@@ -661,7 +661,7 @@ readmemll_2386(uint32_t addr)
 
     addr = addr64a[0] & rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_l)
         return map->read_l(addr, map->priv);
@@ -701,7 +701,7 @@ writememll_2386(uint32_t addr, uint32_t val)
                 for (i = 0; i < 4; i++) {
                     /* Do not translate a page that has a valid lookup, as that is by definition valid
                        and the whole purpose of the lookup is to avoid repeat identical translations. */
-                    if (!page_lookup[(addr + i) >> 12] || !page_lookup[(addr + i) >> 12]->write_b) {
+                    if (!PAGE_LOOKUP_GET((addr + i) >> 12) || !PAGE_LOOKUP_GET((addr + i) >> 12)->write_b) {
                         if (i == 0) {
                             a          = mmutranslate_write_2386(addr + i);
                             addr64a[i] = (uint32_t) a;
@@ -741,7 +741,7 @@ writememll_2386(uint32_t addr, uint32_t val)
 
     addr = addr64a[0] & rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_l) {
         map->write_l(addr, val, map->priv);
@@ -794,7 +794,7 @@ readmemll_no_mmut_2386(uint32_t addr, uint32_t *a64)
     } else
         addr &= rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_l)
         return map->read_l(addr, map->priv);
@@ -842,7 +842,7 @@ writememll_no_mmut_2386(uint32_t addr, uint32_t *a64, uint32_t val)
     } else
         addr &= rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_l) {
         map->write_l(addr, val, map->priv);
@@ -922,7 +922,7 @@ readmemql_2386(uint32_t addr)
 
     addr = addr64a[0] & rammask;
 
-    map = read_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = READ_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->read_l)
         return map->read_l(addr, map->priv) |
@@ -972,7 +972,7 @@ writememql_2386(uint32_t addr, uint64_t val)
                 for (i = 0; i < 8; i++) {
                     /* Do not translate a page that has a valid lookup, as that is by definition valid
                        and the whole purpose of the lookup is to avoid repeat identical translations. */
-                    if (!page_lookup[(addr + i) >> 12] || !page_lookup[(addr + i) >> 12]->write_b) {
+                    if (!PAGE_LOOKUP_GET((addr + i) >> 12) || !PAGE_LOOKUP_GET((addr + i) >> 12)->write_b) {
                         if (i == 0) {
                             a          = mmutranslate_write_2386(addr + i);
                             addr64a[i] = (uint32_t) a;
@@ -1010,7 +1010,7 @@ writememql_2386(uint32_t addr, uint64_t val)
 
     addr = addr64a[0] & rammask;
 
-    map = write_mapping[addr >> MEM_GRANULARITY_BITS];
+    map = WRITE_MAPPING(addr >> MEM_GRANULARITY_BITS);
 
     if (map && map->write_l) {
         map->write_l(addr, val, map->priv);

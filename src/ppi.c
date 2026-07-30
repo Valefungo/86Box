@@ -11,12 +11,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <wchar.h>
+#include <86box/86box.h>
 #include <86box/timer.h>
 #include <86box/pit.h>
 #include <86box/ppi.h>
 
-PPI ppi;
-int ppispeakon;
+PPI ESP32_BIG_BSS_ATTR ppi;
+int ESP32_BIG_BSS_ATTR ppispeakon;
 
 void
 ppi_reset(void)

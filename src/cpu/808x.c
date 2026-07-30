@@ -88,7 +88,7 @@ uint16_t        last_addr = 0x0000;
 static int       prefetching = 1;
 static int       refresh = 0, cycdiff;
 
-static i8080 emulated_processor;
+static i8080 ESP32_BIG_BSS_ATTR emulated_processor;
 static bool cpu_md_write_disable = 1;
 
 /* Various things needed for 8087. */
@@ -1912,6 +1912,9 @@ cpu_outw(uint16_t port, uint16_t val)
 }
 
 void
+#ifdef ESP_PLATFORM
+IRAM_ATTR
+#endif
 execx86_instruction(void)
 {
     uint8_t  temp = 0, temp2, old_af, nests;
@@ -3365,7 +3368,7 @@ execx86_instruction(void)
 
 /* Executes instructions up to the specified number of cycles. */
 void
-execx86(int cycs)
+execx86(int32_t cycs)
 {
     if (m808x_86box_should_use()) {
         execx86_new(cycs);

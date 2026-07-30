@@ -55,7 +55,7 @@ typedef struct rz1000_t {
     uint8_t  type;
 } rz1000_t;
 
-static int next_id = 0;
+static int ESP32_BIG_BSS_ATTR next_id = 0;
 
 #ifdef ENABLE_RZ1000_LOG
 int rz1000_do_log = ENABLE_RZ1000_LOG;

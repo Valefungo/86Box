@@ -19,8 +19,8 @@ adgold_highpass_iir(int i, float NewSample)
         0.97261396931534050000
     };
 
-    static float y[2][NCoef + 1]; /* output samples */
-    static float x[2][NCoef + 1]; /* input samples */
+    static float ESP32_BIG_BSS_ATTR y[2][NCoef + 1]; /* output samples */
+    static float ESP32_BIG_BSS_ATTR x[2][NCoef + 1]; /* input samples */
     int          n;
 
     /* shift the old samples */
@@ -54,8 +54,8 @@ adgold_lowpass_iir(int i, float NewSample)
         0.97261396931306277000
     };
 
-    static float y[2][NCoef + 1]; /* output samples */
-    static float x[2][NCoef + 1]; /* input samples */
+    static float ESP32_BIG_BSS_ATTR y[2][NCoef + 1]; /* output samples */
+    static float ESP32_BIG_BSS_ATTR x[2][NCoef + 1]; /* input samples */
     int          n;
 
     /* shift the old samples */
@@ -89,8 +89,8 @@ adgold_pseudo_stereo_iir(float NewSample)
         0.98738361004063568000
     };
 
-    static float y[NCoef + 1]; /* output samples */
-    static float x[NCoef + 1]; /* input samples */
+    static float ESP32_BIG_BSS_ATTR y[NCoef + 1]; /* output samples */
+    static float ESP32_BIG_BSS_ATTR x[NCoef + 1]; /* input samples */
     int          n;
 
     /* shift the old samples */
@@ -124,8 +124,8 @@ dss_iir(float NewSample)
         0.55326988968868285000
     };
 
-    static float y[NCoef + 1]; /* output samples */
-    static float x[NCoef + 1]; /* input samples */
+    static float ESP32_BIG_BSS_ATTR y[NCoef + 1]; /* output samples */
+    static float ESP32_BIG_BSS_ATTR x[NCoef + 1]; /* input samples */
     int          n;
 
     /* shift the old samples */
@@ -159,8 +159,8 @@ dac_iir(int i, float NewSample)
         -0.99869185905052738000
     };
 
-    static float y[2][NCoef + 1]; /* output samples */
-    static float x[2][NCoef + 1]; /* input samples */
+    static float ESP32_BIG_BSS_ATTR y[2][NCoef + 1]; /* output samples */
+    static float ESP32_BIG_BSS_ATTR x[2][NCoef + 1]; /* input samples */
     int          n;
 
     /* shift the old samples */
@@ -197,8 +197,8 @@ low_iir(int c, int i, double NewSample)
         0.93726236021404663000
     };
 
-    static double y[6][2][NCoef + 1]; /* output samples */
-    static double x[6][2][NCoef + 1]; /* input samples */
+    static double ESP32_BIG_BSS_ATTR y[6][2][NCoef + 1]; /* output samples */
+    static double ESP32_BIG_BSS_ATTR x[6][2][NCoef + 1]; /* input samples */
     int           n;
 
     /* shift the old samples */
@@ -232,8 +232,8 @@ low_cut_iir(int c, int i, double NewSample)
         0.93726236021916731000
     };
 
-    static double y[6][2][NCoef + 1]; /* output samples */
-    static double x[6][2][NCoef + 1]; /* input samples */
+    static double ESP32_BIG_BSS_ATTR y[6][2][NCoef + 1]; /* output samples */
+    static double ESP32_BIG_BSS_ATTR x[6][2][NCoef + 1]; /* input samples */
     int           n;
 
     /* shift the old samples */
@@ -266,8 +266,8 @@ high_iir(int c, int i, double NewSample)
         -1.36640781670578510000,
         0.52352474706139873000
     };
-    static double y[6][2][NCoef + 1]; /* output samples */
-    static double x[6][2][NCoef + 1]; /* input samples */
+    static double ESP32_BIG_BSS_ATTR y[6][2][NCoef + 1]; /* output samples */
+    static double ESP32_BIG_BSS_ATTR x[6][2][NCoef + 1]; /* input samples */
     int           n;
 
     /* shift the old samples */
@@ -300,8 +300,8 @@ high_cut_iir(int c, int i, double NewSample)
         -1.36640781666419950000,
         0.52352474703279628000
     };
-    static double y[6][2][NCoef + 1]; /* output samples */
-    static double x[6][2][NCoef + 1]; /* input samples */
+    static double ESP32_BIG_BSS_ATTR y[6][2][NCoef + 1]; /* output samples */
+    static double ESP32_BIG_BSS_ATTR x[6][2][NCoef + 1]; /* input samples */
     int           n;
 
     /* shift the old samples */
@@ -334,8 +334,8 @@ deemph_iir(int i, double NewSample)
         -1.05429146278569141337,
         0.26412280202756849290
     };
-    static double y[6][NCoef + 1]; /* output samples */
-    static double x[6][NCoef + 1]; /* input samples */
+    static double ESP32_BIG_BSS_ATTR y[6][NCoef + 1]; /* output samples */
+    static double ESP32_BIG_BSS_ATTR x[6][NCoef + 1]; /* input samples */
     int           n;
 
     /* shift the old samples */
@@ -372,8 +372,8 @@ sb_iir(int c, int i, double NewSample)
         0.55326988968868285000
     };
 
-    static double y[6][2][NCoef + 1]; /* output samples */
-    static double x[6][2][NCoef + 1]; /* input samples */
+    static double ESP32_BIG_BSS_ATTR y[6][2][NCoef + 1]; /* output samples */
+    static double ESP32_BIG_BSS_ATTR x[6][2][NCoef + 1]; /* input samples */
     int           n;
 
     /* shift the old samples */
@@ -400,7 +400,7 @@ extern double low_fir_sb16_coef[SB16_NCoef];
 static inline double
 low_fir_sb16(int i, double NewSample)
 {
-    static double x[2][SB16_NCoef + 1]; // input samples
+    static double ESP32_BIG_BSS_ATTR x[2][SB16_NCoef + 1]; // input samples
     static int    pos    = 0;
     double        out    = 0.0;
     int           n;
@@ -427,7 +427,7 @@ extern double low_fir_pas16_coef[SB16_NCoef];
 static inline double
 low_fir_pas16(const int i, const double NewSample)
 {
-    static double x[2][SB16_NCoef + 1]; // input samples
+    static double ESP32_BIG_BSS_ATTR x[2][SB16_NCoef + 1]; // input samples
     static int    pos = 0;
     double        out = 0.0;
     int           n;

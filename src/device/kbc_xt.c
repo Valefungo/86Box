@@ -91,12 +91,12 @@ typedef struct xtkbd_t {
     pc_timer_t send_delay_timer;
 } xtkbd_t;
 
-static uint8_t key_queue[16];
-static int     key_queue_start = 0;
-static int     key_queue_end   = 0;
-static int     is_tandy = 0;
-static int     is_t1x00 = 0;
-static int     is_amstrad = 0;
+static uint8_t ESP32_BIG_BSS_ATTR key_queue[16];
+static int     ESP32_BIG_BSS_ATTR key_queue_start = 0;
+static int     ESP32_BIG_BSS_ATTR key_queue_end   = 0;
+static int     ESP32_BIG_BSS_ATTR is_tandy = 0;
+static int     ESP32_BIG_BSS_ATTR is_t1x00 = 0;
+static int     ESP32_BIG_BSS_ATTR is_amstrad = 0;
 
 #define kbd_adddata kbd_adddata_xt_common
 

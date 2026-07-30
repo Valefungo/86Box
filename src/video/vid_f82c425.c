@@ -69,8 +69,8 @@
 #define F82C425_YSIZE 200
 
 /* Mapping of attributes to colours */
-static uint32_t smartmap[256][2];
-static uint32_t colormap[4];
+static uint32_t ESP32_BIG_BSS_ATTR smartmap[256][2];
+static uint32_t ESP32_BIG_BSS_ATTR colormap[4];
 
 static video_timings_t timing_f82c425 = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
 

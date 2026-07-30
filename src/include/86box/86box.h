@@ -79,6 +79,82 @@
 #define BCD16(x)  ((((x) / 1000) << 12) | (((x) / 100) << 8) | BCD8(x))
 #define BCD32(x)  ((((x) / 10000000) << 28) | (((x) / 1000000) << 24) | (((x) / 100000) << 20) | (((x) / 10000) << 16) | BCD16(x))
 
+/* Tags large static arrays (chip lookup tables, per-drive/CD state,
+ * framebuffers-adjacent scratch buffers...) into PSRAM instead of this
+ * target's small internal SRAM. The automatic BSS-to-PSRAM linker
+ * mechanism doesn't reach plain .bss on this ESP-IDF/ESP32-P4
+ * combination, only symbols explicitly placed in .ext_ram.bss - see the
+ * MEM_BIG_TABLE_ATTR comment in src/mem/mem.c for the fuller story. A
+ * no-op on every other platform. */
+#ifdef ESP_PLATFORM
+#include <esp_attr.h>
+#define ESP32_BIG_BSS_ATTR EXT_RAM_BSS_ATTR
+#else
+#define ESP32_BIG_BSS_ATTR
+#endif
+
+/* Temporary (2026-07-29): unifies this session's cross-platform bug-hunt
+ * diagnostics (getpccache/mem_mapping_resolve timing, pc_run breakdown,
+ * the instruction-trace ring buffer in 386_dynarec.c) under one symbol so
+ * the exact same logging compiles on both the ESP32 target and desktop
+ * builds - the wild CS jump this is chasing was confirmed to reproduce on
+ * desktop too, so comparing identical diagnostics across platforms is the
+ * point. Auto-defined on ESP32 (preserves existing behavior there without
+ * touching its build files); desktop builds opt in by passing
+ * -DCLAUDE_LOG to the compiler (e.g. -DCMAKE_C_FLAGS=-DCLAUDE_LOG). Purely
+ * diagnostic logging is gated on this; genuinely platform-specific code
+ * (PSRAM placement, ESP-IDF heap_caps_* queries) stays under
+ * ESP_PLATFORM, since it isn't portable regardless of logging intent. */
+#ifdef ESP_PLATFORM
+#ifndef CLAUDE_LOG
+#undef CLAUDE_LOG
+#endif
+#endif
+
+/* Guards leftover self-heal/sanity-check code that was needed to catch a
+ * real bug (the mem_mapping_resolve_common()/_exec() uint32_t overflow,
+ * resolved 2026-07-30 - see the RESOLVED note in project_esp32_port_plan
+ * memory) while it was still unfixed. Now that the root cause is fixed,
+ * these checks cost a little (a few pointer compares per instruction
+ * fetch in the hot path) for no ongoing benefit - but rather than delete
+ * the code outright, gate it behind this separate symbol, left
+ * deliberately undefined here. If a similar bug ever resurfaces, define
+ * CLAUDE_FIX (compiler flag or uncomment a #define here) to bring the
+ * checks back without having to re-derive them from scratch. */
+/* #define CLAUDE_FIX */
+
+#ifdef CLAUDE_LOG
+/* plat_timer_read()'s unit is NOT consistent across platforms: ESP32's
+ * implementation (esp32_plat.c) returns esp_timer_get_time(), genuinely
+ * microseconds - but the desktop/SDL implementation (sdl_plat.c) returns
+ * SDL_GetPerformanceCounter(), an arbitrary-frequency tick count (often
+ * >1GHz) that is NOT microseconds at all. Code that assumed plat_timer_read()
+ * deltas were already microseconds (this session's diagnostics did) produced
+ * wildly wrong numbers on desktop - e.g. a "sleep 9x the measured duration"
+ * slowdown turned into multi-minute sleeps per call. Use this instead of
+ * plat_timer_read() directly in any CLAUDE_LOG diagnostic that needs a real
+ * microsecond value; it's a passthrough on ESP32 (same value, just named
+ * differently) and uses clock_gettime(CLOCK_MONOTONIC) on desktop instead of
+ * trusting plat_timer_read()'s platform-dependent tick frequency. */
+#ifdef ESP_PLATFORM
+static inline uint64_t
+claude_log_now_us(void)
+{
+    extern uint64_t plat_timer_read(void);
+    return plat_timer_read();
+}
+#else
+#include <time.h>
+static inline uint64_t
+claude_log_now_us(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t) ts.tv_sec * 1000000ULL + (uint64_t) ts.tv_nsec / 1000ULL;
+}
+#endif
+#endif
+
 #define AS_U8(x)     (*((uint8_t *) &(x)))
 #define AS_U16(x)    (*((uint16_t *) &(x)))
 #define AS_U32(x)    (*((uint32_t *) &(x)))
@@ -338,7 +414,9 @@ struct accelKey {
 };
 #define NUM_ACCELS 16
 extern struct accelKey acc_keys[NUM_ACCELS];
-extern struct accelKey def_acc_keys[NUM_ACCELS];
+/* Factory defaults, never written at runtime (only read to populate/compare
+ * against acc_keys) - const so it lives in flash/.rodata instead of RAM. */
+extern const struct accelKey def_acc_keys[NUM_ACCELS];
 extern int FindAccelerator(const char *name);
 
 #ifdef __cplusplus

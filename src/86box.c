@@ -47,7 +47,10 @@
 #include <86box/86box.h>
 #include <86box/config.h>
 #include <86box/mem.h>
+#include <86box/pic.h>
+#include <86box/nmi.h>
 #include "cpu.h"
+#include "x86.h"
 #ifdef USE_DYNAREC
 #    include "codegen_public.h"
 #endif
@@ -107,135 +110,145 @@
 /* Stuff that used to be globally declared in plat.h but is now extern there
    and declared here instead. */
 int          dopause = 1;  /* system is paused */
-volatile int is_quit;  /* system exit requested */
-uint64_t     timer_freq;
-char         emu_version[200]; /* version ID string */
+/* (Left untagged deliberately: dopause is checked every pc_run()/main-loop
+ * iteration via ack_pause() and the ESP32 main loop - keep it in internal
+ * SRAM rather than PSRAM given how often it's read.) */
+volatile int ESP32_BIG_BSS_ATTR is_quit;  /* system exit requested */
+uint64_t     ESP32_BIG_BSS_ATTR timer_freq;
+char         ESP32_BIG_BSS_ATTR emu_version[200]; /* version ID string */
 
 #ifdef MTR_ENABLED
-int tracing_on = 0;
+int ESP32_BIG_BSS_ATTR tracing_on = 0;
 #endif
 
 /* Commandline options. */
-int dump_on_exit        = 0; /* (O) dump regs on exit */
-int start_in_fullscreen = 0; /* (O) start in fullscreen */
+int ESP32_BIG_BSS_ATTR dump_on_exit        = 0; /* (O) dump regs on exit */
+int ESP32_BIG_BSS_ATTR start_in_fullscreen = 0; /* (O) start in fullscreen */
 #ifdef _WIN32
-int force_debug = 0; /* (O) force debug output */
+int ESP32_BIG_BSS_ATTR force_debug = 0; /* (O) force debug output */
 #endif
-int settings_only     = 0; /* (O) show only the settings dialog */
+int ESP32_BIG_BSS_ATTR settings_only     = 0; /* (O) show only the settings dialog */
 int confirm_exit_cmdl = 1; /* (O) do not ask for confirmation on quit if set to 0 */
 #ifdef _WIN32
-uint64_t unique_id   = 0;
-uint64_t source_hwnd = 0;
+uint64_t ESP32_BIG_BSS_ATTR unique_id   = 0;
+uint64_t ESP32_BIG_BSS_ATTR source_hwnd = 0;
 #endif
-char       rom_path[1024]   = { '\0' };     /* (O) full path to ROMs */
-rom_path_t rom_paths        = { "", NULL }; /* (O) full paths to ROMs */
-char       asset_path[1024] = { '\0' };     /* (O) full path to assets */
-rom_path_t asset_paths      = { "", NULL }; /* (O) full paths to assets */
-char       log_path[1024]   = { '\0' };     /* (O) full path of logfile */
-char       vm_name[1024]    = { '\0' };     /* (O) display name of the VM */
-int      do_nothing                             = 0;
-int      dump_missing                           = 0;
-int      clear_cmos                             = 0;
+char       ESP32_BIG_BSS_ATTR rom_path[1024]   = { '\0' };     /* (O) full path to ROMs */
+rom_path_t ESP32_BIG_BSS_ATTR rom_paths        = { "", NULL }; /* (O) full paths to ROMs */
+char       ESP32_BIG_BSS_ATTR asset_path[1024] = { '\0' };     /* (O) full path to assets */
+rom_path_t ESP32_BIG_BSS_ATTR asset_paths      = { "", NULL }; /* (O) full paths to assets */
+char       ESP32_BIG_BSS_ATTR log_path[1024]   = { '\0' };     /* (O) full path of logfile */
+char       ESP32_BIG_BSS_ATTR vm_name[1024]    = { '\0' };     /* (O) display name of the VM */
+int      ESP32_BIG_BSS_ATTR do_nothing                             = 0;
+int      ESP32_BIG_BSS_ATTR dump_missing                           = 0;
+int      ESP32_BIG_BSS_ATTR clear_cmos                             = 0;
 #ifdef USE_INSTRUMENT
-uint8_t  instru_enabled                         = 0;
-uint64_t instru_run_ms                          = 0;
+uint8_t  ESP32_BIG_BSS_ATTR instru_enabled                         = 0;
+uint64_t ESP32_BIG_BSS_ATTR instru_run_ms                          = 0;
 #endif
-int      clear_flash                            = 0;
-int      auto_paused                            = 0;
-int      auto_dialog_paused                     = 0;
+int      ESP32_BIG_BSS_ATTR clear_flash                            = 0;
+int      ESP32_BIG_BSS_ATTR auto_paused                            = 0;
+int      ESP32_BIG_BSS_ATTR auto_dialog_paused                     = 0;
 
 /* Configuration values. */
-int      window_remember;
-int      vid_resize;                                              /* (C) allow resizing */
-int      invert_display                         = 0;              /* (C) invert the display */
-int      suppress_overscan                      = 0;              /* (C) suppress overscans */
-int      lang_id                                = 0;              /* (G) language id */
-int      scale                                  = 0;              /* (C) screen scale factor */
-int      dpi_scale                              = 0;              /* (C) DPI scaling of the emulated
+int      ESP32_BIG_BSS_ATTR window_remember;
+int      ESP32_BIG_BSS_ATTR vid_resize;                                              /* (C) allow resizing */
+int      ESP32_BIG_BSS_ATTR invert_display                         = 0;              /* (C) invert the display */
+int      ESP32_BIG_BSS_ATTR suppress_overscan                      = 0;              /* (C) suppress overscans */
+int      ESP32_BIG_BSS_ATTR lang_id                                = 0;              /* (G) language id */
+int      ESP32_BIG_BSS_ATTR scale                                  = 0;              /* (C) screen scale factor */
+int      ESP32_BIG_BSS_ATTR dpi_scale                              = 0;              /* (C) DPI scaling of the emulated
                                                                          screen */
-int      vid_api                                = 0;              /* (C) video renderer */
-int      vid_cga_contrast                       = 0;              /* (C) video */
-int      video_fullscreen                       = 0;              /* (C) video */
-int      video_fullscreen_scale                 = 0;              /* (C) video */
-int      fullscreen_ui_visible                  = 0;              /* (C) video */
-int      enable_overscan                        = 0;              /* (C) video */
-int      force_43                               = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR vid_api                                = 0;              /* (C) video renderer */
+int      ESP32_BIG_BSS_ATTR vid_cga_contrast                       = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR video_fullscreen                       = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR video_fullscreen_scale                 = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR fullscreen_ui_visible                  = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR enable_overscan                        = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR force_43                               = 0;              /* (C) video */
 int      video_filter_method                    = 1;              /* (C) video */
-int      video_vsync                            = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR video_vsync                            = 0;              /* (C) video */
 int      video_framerate                        = -1;             /* (C) video */
-int      video_vk_device                        = 0;              /* (C) video */
-int      bugger_enabled                         = 0;              /* (C) enable ISAbugger */
-int      novell_keycard_enabled                 = 0;              /* (C) enable Novell NetWare 2.x key card emulation. */
-int      postcard_enabled                       = 0;              /* (C) enable POST card */
-int      unittester_enabled                     = 0;              /* (C) enable unit tester device */
-int      gameport_type[GAMEPORT_MAX]            = { 0, 0 };       /* (C) enable gameports */
-int      isamem_type[ISAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA mem cards */
-int      isarom_type[ISAROM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA ROM cards */
-int      isartc_type                            = 0;              /* (C) enable ISA RTC card */
-int      gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
+int      ESP32_BIG_BSS_ATTR video_vk_device                        = 0;              /* (C) video */
+int      ESP32_BIG_BSS_ATTR bugger_enabled                         = 0;              /* (C) enable ISAbugger */
+int      ESP32_BIG_BSS_ATTR novell_keycard_enabled                 = 0;              /* (C) enable Novell NetWare 2.x key card emulation. */
+int      ESP32_BIG_BSS_ATTR postcard_enabled                       = 0;              /* (C) enable POST card */
+int      ESP32_BIG_BSS_ATTR unittester_enabled                     = 0;              /* (C) enable unit tester device */
+int      ESP32_BIG_BSS_ATTR gameport_type[GAMEPORT_MAX]            = { 0, 0 };       /* (C) enable gameports */
+int      ESP32_BIG_BSS_ATTR isamem_type[ISAMEM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA mem cards */
+int      ESP32_BIG_BSS_ATTR isarom_type[ISAROM_MAX]                = { 0, 0, 0, 0 }; /* (C) enable ISA ROM cards */
+int      ESP32_BIG_BSS_ATTR isartc_type                            = 0;              /* (C) enable ISA RTC card */
+int      ESP32_BIG_BSS_ATTR gfxcard[GFXCARD_MAX]                   = { 0, 0 };       /* (C) graphics/video card */
 int      show_second_monitors                   = 1;              /* (C) show non-primary monitors */
+/* 2026-07-28: retagged after a bisection step showed reverting this pair
+ * alone did NOT fix a real ~6x cpu_exec() regression seen on hardware -
+ * so the sound_poll()-reads-these-at-48kHz theory was wrong (or at least
+ * incomplete). Back to matching the rest of the batch while the real
+ * cause is bisected properly. */
 int      sound_is_float                         = 1;              /* (C) sound uses FP values */
 int      sound_sample_rate                      = FREQ_48000;     /* (C) sound output sample rate */
-int      ibm8514_standalone_enabled             = 0;              /* (C) video option */
-int      xga_standalone_enabled                 = 0;              /* (C) video option */
-int      da2_standalone_enabled                 = 0;              /* (C) video option */
-uint32_t mem_size                               = 0;              /* (C) memory size (Installed on
+int      ESP32_BIG_BSS_ATTR ibm8514_standalone_enabled             = 0;              /* (C) video option */
+int      ESP32_BIG_BSS_ATTR xga_standalone_enabled                 = 0;              /* (C) video option */
+int      ESP32_BIG_BSS_ATTR da2_standalone_enabled                 = 0;              /* (C) video option */
+uint32_t ESP32_BIG_BSS_ATTR mem_size                               = 0;              /* (C) memory size (Installed on
                                                                          system board)*/
-uint32_t isa_mem_size                           = 0;              /* (C) memory size (ISA Memory Cards) */
-int      cpu_use_dynarec                        = 0;              /* (C) cpu uses/needs Dyna */
-int      cpu                                    = 0;              /* (C) cpu type */
-int      fpu_type                               = 0;              /* (C) fpu type */
-int      fpu_softfloat                          = 0;              /* (C) fpu uses softfloat */
-int      time_sync                              = 0;              /* (C) enable time sync */
+uint32_t ESP32_BIG_BSS_ATTR isa_mem_size                           = 0;              /* (C) memory size (ISA Memory Cards) */
+int      ESP32_BIG_BSS_ATTR cpu_use_dynarec                        = 0;              /* (C) cpu uses/needs Dyna */
+int      ESP32_BIG_BSS_ATTR cpu                  = 0;              /* (C) cpu type */
+int      ESP32_BIG_BSS_ATTR fpu_type                               = 0;              /* (C) fpu type */
+int      ESP32_BIG_BSS_ATTR fpu_softfloat                          = 0;              /* (C) fpu uses softfloat */
+int      ESP32_BIG_BSS_ATTR time_sync                              = 0;              /* (C) enable time sync */
 int      confirm_reset                          = 1;              /* (G) enable reset confirmation */
 int      confirm_exit                           = 1;              /* (G) enable exit confirmation */
 int      confirm_save                           = 1;              /* (G) enable save confirmation */
-int      chd_precache_level                     = 0;              /* (G) CHD precache level */
-int      enable_discord                         = 0;              /* (C) enable Discord integration */
+int      ESP32_BIG_BSS_ATTR chd_precache_level                     = 0;              /* (G) CHD precache level */
+int      ESP32_BIG_BSS_ATTR enable_discord                         = 0;              /* (C) enable Discord integration */
 int      pit_mode                               = -1;             /* (C) force setting PIT mode */
-int      fm_driver                              = 0;              /* (C) select FM sound driver */
-int      open_dir_usr_path                      = 0;              /* (G) default file open dialog directory
+int      ESP32_BIG_BSS_ATTR fm_driver                              = 0;              /* (C) select FM sound driver */
+int      ESP32_BIG_BSS_ATTR open_dir_usr_path                      = 0;              /* (G) default file open dialog directory
                                                                          of usr_path */
-int      video_fullscreen_scale_maximized       = 0;              /* (C) Whether fullscreen scaling settings
+int      ESP32_BIG_BSS_ATTR video_fullscreen_scale_maximized       = 0;              /* (C) Whether fullscreen scaling settings
                                                                          also apply when maximized. */
-int      do_auto_pause                          = 0;              /* (G) Auto-pause the emulator on focus
+int      ESP32_BIG_BSS_ATTR do_auto_pause                          = 0;              /* (G) Auto-pause the emulator on focus
                                                                          loss */
-int      do_auto_dialog_pause                   = 0;              /* (G) Auto-pause the emulator on dialog boxes */
-int      force_constant_mouse                   = 0;              /* (C) Force constant updating of the mouse */
+int      ESP32_BIG_BSS_ATTR do_auto_dialog_pause                   = 0;              /* (G) Auto-pause the emulator on dialog boxes */
+int      ESP32_BIG_BSS_ATTR force_constant_mouse                   = 0;              /* (C) Force constant updating of the mouse */
 int      hook_enabled                           = 1;              /* (C) Keyboard hook is enabled */
-int      test_mode                              = 0;              /* (C) Test mode */
-char     uuid[MAX_UUID_LEN]                     = { '\0' };       /* (C) UUID or machine identifier */
-int      sound_muted                            = 0;              /* (C) Is sound muted? */
-int      jumpered_internal_ecp_dma              = 0;              /* (C) Jumpered internal EPC DMA */
-int      inhibit_multimedia_keys;                                 /* (G) Inhibit multimedia keys on Windows. */
-int      force_10ms;                                              /* (C) Force 10ms CPU frame intervals. */
-int      vmm_disabled                           = 0;              /* (G) disable built-in manager */
-char     vmm_path_cfg[1024]                     = { '\0' };       /* (G) VMs path (unless -E is used)*/
+int      ESP32_BIG_BSS_ATTR test_mode                              = 0;              /* (C) Test mode */
+char     ESP32_BIG_BSS_ATTR uuid[MAX_UUID_LEN]                     = { '\0' };       /* (C) UUID or machine identifier */
+int      ESP32_BIG_BSS_ATTR sound_muted                            = 0;              /* (C) Is sound muted? */
+int      ESP32_BIG_BSS_ATTR jumpered_internal_ecp_dma              = 0;              /* (C) Jumpered internal EPC DMA */
+int      ESP32_BIG_BSS_ATTR inhibit_multimedia_keys;                                 /* (G) Inhibit multimedia keys on Windows. */
+int      ESP32_BIG_BSS_ATTR force_10ms;                                              /* (C) Force 10ms CPU frame intervals. */
+int      ESP32_BIG_BSS_ATTR vmm_disabled                           = 0;              /* (G) disable built-in manager */
+char     ESP32_BIG_BSS_ATTR vmm_path_cfg[1024]                     = { '\0' };       /* (G) VMs path (unless -E is used)*/
 
-int      other_ide_present = 0;                                   /* IDE controllers from non-IDE cards are
+int      ESP32_BIG_BSS_ATTR other_ide_present = 0;                                   /* IDE controllers from non-IDE cards are
                                                                      present */
-int      other_scsi_present = 0;                                  /* SCSI controllers from non-SCSI cards are
+int      ESP32_BIG_BSS_ATTR other_scsi_present = 0;                                  /* SCSI controllers from non-SCSI cards are
                                                                      present */
 
-int      is_pcjr = 0;                                             /* The current machine is PCjr. */
-int      portable_mode = 0;                                       /* We are running in portable mode
+int      ESP32_BIG_BSS_ATTR is_pcjr = 0;                                             /* The current machine is PCjr. */
+int      ESP32_BIG_BSS_ATTR portable_mode = 0;                                       /* We are running in portable mode
                                                                      (global dirs = exe path) */
-int      global_cfg_overridden = 0;                               /* Global config file was overriden on command line */
+int      ESP32_BIG_BSS_ATTR global_cfg_overridden = 0;                               /* Global config file was overriden on command line */
 
-int      monitor_edid = 0;                                        /* (C) Which EDID to use. 0=default, 1=custom. */
-char     monitor_edid_path[1024] = { 0 };                         /* (C) Path to custom EDID */
+int      ESP32_BIG_BSS_ATTR monitor_edid = 0;                                        /* (C) Which EDID to use. 0=default, 1=custom. */
+char     ESP32_BIG_BSS_ATTR monitor_edid_path[1024] = { 0 };                         /* (C) Path to custom EDID */
 
 double   video_gl_input_scale = 1.0;                              /* (C) OpenGL 3.x input scale */
-int      video_gl_input_scale_mode = FULLSCR_SCALE_FULL;          /* (C) OpenGL 3.x input stretch mode */
-int      color_scheme = 0;                                        /* (C) Color scheme of UI (Windows-only) */
+int      ESP32_BIG_BSS_ATTR video_gl_input_scale_mode = FULLSCR_SCALE_FULL;          /* (C) OpenGL 3.x input stretch mode */
+int      ESP32_BIG_BSS_ATTR color_scheme = 0;                                        /* (C) Color scheme of UI (Windows-only) */
 int      fdd_sounds_enabled = 1;                                  /* (C) Floppy drive sounds enabled */
-int      is_new_808x = 0;                                         /* (C) Use the new 808x code. */
+int      ESP32_BIG_BSS_ATTR is_new_808x = 0;                                         /* (C) Use the new 808x code. */
 
 // Accelerator key array
-struct accelKey acc_keys[NUM_ACCELS];
+struct accelKey ESP32_BIG_BSS_ATTR acc_keys[NUM_ACCELS];
 
-// Default accelerator key values
-struct accelKey def_acc_keys[NUM_ACCELS] = {
+// Default accelerator key values - never written at runtime, const so it
+// lives in flash/.rodata instead of RAM (see the extern declaration in
+// 86box.h for why this is safe).
+const struct accelKey def_acc_keys[NUM_ACCELS] = {
     {
         .name="send_ctrl_alt_del",
         .desc="Send Control+Alt+Del",
@@ -319,55 +332,55 @@ struct accelKey def_acc_keys[NUM_ACCELS] = {
     }
 };
 
-char vmm_path[1024] = { '\0' }; /* VM manager path to scan for VMs */
+char ESP32_BIG_BSS_ATTR vmm_path[1024] = { '\0' }; /* VM manager path to scan for VMs */
 int  start_vmm = 1;
 
 /* Statistics. */
 extern int mmuflush;
 
 /* emulator % */
-int fps;
-int framecount;
+int ESP32_BIG_BSS_ATTR fps;
+int ESP32_BIG_BSS_ATTR framecount;
 static uint32_t fps_sample_elapsed_ms = 1000;
 
 extern int output;
-int        atfullspeed;
+int        ESP32_BIG_BSS_ATTR atfullspeed;
 
 extern double exp_pow_table[0x800];
 
-char  exe_path[2048]; /* path (dir) of executable */
-char  usr_path[1024]; /* path (dir) of user data */
-char  cfg_path[1024]; /* full path of config file */
-char  global_cfg_path[1024]; /* full path of config file */
+char  ESP32_BIG_BSS_ATTR exe_path[2048]; /* path (dir) of executable */
+char  ESP32_BIG_BSS_ATTR usr_path[1024]; /* path (dir) of user data */
+char  ESP32_BIG_BSS_ATTR cfg_path[1024]; /* full path of config file */
+char  ESP32_BIG_BSS_ATTR global_cfg_path[1024]; /* full path of config file */
 FILE *stdlog = NULL;  /* file to log output to */
 void (*pclog_hook)(const char *) = NULL; /* optional UI log hook */
 #if 0
-int   scrnsz_x = SCREEN_RES_X; /* current screen size, X */
-int   scrnsz_y = SCREEN_RES_Y; /* current screen size, Y */
+int   ESP32_BIG_BSS_ATTR scrnsz_x = SCREEN_RES_X; /* current screen size, X */
+int   ESP32_BIG_BSS_ATTR scrnsz_y = SCREEN_RES_Y; /* current screen size, Y */
 #endif
-int config_changed; /* config has changed */
-int title_update;
-int framecountx        = 0;
-int hard_reset_pending = 0;
+int ESP32_BIG_BSS_ATTR config_changed; /* config has changed */
+int ESP32_BIG_BSS_ATTR title_update;
+int ESP32_BIG_BSS_ATTR framecountx        = 0;
+int ESP32_BIG_BSS_ATTR hard_reset_pending = 0;
 
 #if 0
-int unscaled_size_x = SCREEN_RES_X; /* current unscaled size X */
-int unscaled_size_y = SCREEN_RES_Y; /* current unscaled size Y */
-int efscrnsz_y = SCREEN_RES_Y;
+int ESP32_BIG_BSS_ATTR unscaled_size_x = SCREEN_RES_X; /* current unscaled size X */
+int ESP32_BIG_BSS_ATTR unscaled_size_y = SCREEN_RES_Y; /* current unscaled size Y */
+int ESP32_BIG_BSS_ATTR efscrnsz_y = SCREEN_RES_Y;
 #endif
 
 __thread int is_cpu_thread = 0;
 
-static ATOMIC_INT do_pause_ack = 0;
-static ATOMIC_INT pause_ack = 0;
+static ATOMIC_INT ESP32_BIG_BSS_ATTR do_pause_ack = 0;
+static ATOMIC_INT ESP32_BIG_BSS_ATTR pause_ack = 0;
 
 #define LOG_SIZE_BUFFER 8192            /* Log size buffer */
 
 #ifndef RELEASE_BUILD
 
-static char buff[LOG_SIZE_BUFFER];
+static char ESP32_BIG_BSS_ATTR buff[LOG_SIZE_BUFFER];
 
-static int seen = 0;
+static int ESP32_BIG_BSS_ATTR seen = 0;
 
 static int suppr_seen = 1;
 
@@ -1441,8 +1454,18 @@ pc_init_roms(void)
 
     pc_log("Scanning for ROM images:\n");
     c = 0;
-    for (m = 0; m <= machine_count(); m++)
+    for (m = 0; m <= machine_count(); m++) {
+#ifdef CLAUDE_LOG
+        /* This scan can take tens of seconds on real SD card I/O (see the
+         * CONFIG_ESP_TASK_WDT_TIMEOUT_S bump in sdkconfig) - a periodic
+         * heartbeat here is the only sign of life on the serial console
+         * while it runs, since pc_log() itself is a no-op unless
+         * ENABLE_PC_LOG is defined. */
+        if ((m % 32) == 0)
+            pclog("# Scanning ROMs: %d/%d\n", m, machine_count());
+#endif
         c += machine_available(m);
+    }
     if (c == 0) {
         /* No usable ROMs found, aborting. */
         return 0;
@@ -1480,6 +1503,11 @@ pc_init_modules(void)
     }
 
     /* Make sure we have a usable video card. */
+#ifdef CLAUDE_LOG
+    pclog("# video check: gfxcard[0]=%d internal_name=%s available=%d\n",
+          gfxcard[0], video_get_internal_name(gfxcard[0]) ? video_get_internal_name(gfxcard[0]) : "(null)",
+          video_card_available(gfxcard[0]));
+#endif
     if (!video_card_available(gfxcard[0])) {
         memset(tempc, 0, sizeof(tempc));
         device_get_name(video_card_getdevice(gfxcard[0]), 0, tempc);
@@ -1540,7 +1568,9 @@ pc_init_modules(void)
     fdd_init();
     
     if (fdd_sounds_enabled) {
+#ifndef DISABLE_FDD_AUDIO
         fdd_audio_load_profiles();
+#endif
         fdd_audio_init();
     }
     
@@ -1988,6 +2018,91 @@ ack_pause(void)
 void
 pc_run(void)
 {
+#ifdef CLAUDE_LOG
+    /* Diagnostic: pc_run() as a whole costs ~11ms of wall-clock time per
+     * call on real Tab5 hardware (measured via the main-loop heartbeat),
+     * far more than the ~1ms of guest CPU time it's meant to simulate,
+     * and ruling out esp32_input_poll() (rate-limited separately,
+     * doesn't move the needle) as the cause. Break down where the time
+     * actually goes: before cpu_exec() (rivatimer/startblit), cpu_exec()
+     * itself, and after (mouse/joystick/endblit). Rate-limited to ~once
+     * a second. */
+#ifdef MEM_COMPACT_TABLES
+    extern uint64_t esp32_mem_resolve_time_us;
+    extern uint32_t esp32_mem_resolve_calls;
+#else
+    /* mem_mapping_resolve_read()/_write() (and their timing counters)
+     * only exist under MEM_COMPACT_TABLES - this desktop test build has
+     * it off, so these always read 0/0 instead of being undefined. */
+    static uint64_t esp32_mem_resolve_time_us = 0;
+    static uint32_t esp32_mem_resolve_calls   = 0;
+#endif
+    extern uint64_t esp32_cga_poll_time_us;
+    extern uint32_t esp32_cga_poll_calls;
+    extern uint64_t esp32_blit_wait_time_us;
+    extern uint32_t esp32_blit_wait_calls;
+    static uint32_t pc_run_diag_count = 0;
+    int             pc_run_diag_log   = (pc_run_diag_count % 100) == 0;
+    /* cga_do_blit()'s vsync-triggered blit fires roughly once per ~16.6ms
+     * of guest time (one CGA frame), i.e. roughly once every ~16-17
+     * pc_run() calls (~1ms of guest time each) - reading a single-call
+     * snapshot (the old pc_run_diag_log approach) has only a small chance
+     * of landing on the specific call that happens to cross a vsync
+     * boundary, and since we only ever sample call #0/#100/#200/...,
+     * whether any of those coincides with a blit call is down to phase
+     * alignment luck - easily explains blit_wait staying at 0 across an
+     * entire test run even though blits are known to really happen (a
+     * real CGA screen was photographed on real hardware). Accumulate
+     * cga_poll/mem_resolve/blit_wait over the *whole* 100-call window
+     * instead (reset at the window's first call, print the cumulative
+     * total at its last) - guaranteed to span ~5-6 CGA frames, so a real
+     * blit can't be missed by sampling bad luck. */
+    int             pc_run_diag_window_end = (pc_run_diag_count % 100) == 99;
+    uint64_t        diag_t0 = 0, diag_t1 = 0, diag_t2 = 0, diag_t3 = 0;
+    /* Portable equivalent of esp32_main.c's ESP_LOGI "main loop alive"
+     * heartbeat (ESP_LOGI doesn't exist outside ESP-IDF, so desktop builds
+     * never printed anything like it) - same t=/pc_run_count= shape so
+     * ESP32 and desktop logs read the same way side by side. */
+    {
+        static uint64_t claude_heartbeat_start_us = 0;
+        static uint64_t claude_heartbeat_last_us   = 0;
+        static uint32_t claude_heartbeat_calls     = 0;
+        uint64_t        now_us                     = claude_log_now_us();
+        if (claude_heartbeat_start_us == 0) {
+            claude_heartbeat_start_us = now_us;
+            claude_heartbeat_last_us  = now_us;
+        }
+        claude_heartbeat_calls++;
+        if ((now_us - claude_heartbeat_last_us) >= 3000000ULL) {
+            pclog("# main loop alive: t=%lldms pc_run_count=%u\n",
+                  (long long) ((now_us - claude_heartbeat_start_us) / 1000ULL),
+                  (unsigned) claude_heartbeat_calls);
+            claude_heartbeat_last_us = now_us;
+        }
+    }
+    /* m808x_86box_cycle_number() only reflects real state when the
+     * bus-accurate "marty" core is active - since m808x_86box_should_use()
+     * now always returns false on this platform (see that function's own
+     * comment), it silently reads back 0 always, not "no work done". The
+     * classic execx86() interpreter's own budget counter is the `cycles`
+     * macro (-> cpu_state._cycles): it starts each pc_run() call at
+     * whatever residual is left from the previous call (usually near
+     * zero/negative, since the loop always exits once it drops <= 0),
+     * has the requested budget added, then counts down as instructions
+     * execute. Actual cycles consumed = requested + (pre - post). */
+    int32_t         diag_cycles_pre = 0, diag_cycles_post = 0;
+    if (pc_run_diag_log) {
+        diag_t0                   = claude_log_now_us();
+        diag_cycles_pre           = cycles;
+        esp32_mem_resolve_time_us = 0;
+        esp32_mem_resolve_calls   = 0;
+        esp32_cga_poll_time_us    = 0;
+        esp32_cga_poll_calls      = 0;
+        esp32_blit_wait_time_us   = 0;
+        esp32_blit_wait_calls     = 0;
+    }
+#endif
+
     /* Trigger a hard reset if one is pending. */
     if (hard_reset_pending) {
         hard_reset_pending = 0;
@@ -2000,7 +2115,34 @@ pc_run(void)
 
     /* Run a block of code. */
     startblit();
+#ifdef CLAUDE_LOG
+    if (pc_run_diag_log)
+        diag_t1 = claude_log_now_us();
+#endif
     cpu_exec((int32_t) cpu_s->rspeed / (force_10ms ? 100 : 1000));
+#if defined(CLAUDE_LOG) && !defined(ESP_PLATFORM)
+    /* User-requested artificial slowdown (2026-07-29): testing whether the
+     * wild CS jump / interrupt-storm bug is a timing-sensitive race rather
+     * than a deterministic pointer bug - it reproduced on ESP32 (~13-16x
+     * slower than desktop) but not on a clean fast desktop run. Fixed,
+     * constant sleep per call (NOT proportional to any measured duration)
+     * - the first version measured cpu_exec()'s own wall-clock time and
+     * slept 9x that, which fed back catastrophically into 86Box's own
+     * timer catch-up logic (rivatimer_update_all() at the top of the next
+     * call sees a huge elapsed-real-time gap caused by our own sleep and
+     * does a correspondingly huge amount of catch-up work, making the
+     * *next* measured duration even bigger - runaway, confirmed on real
+     * hardware: pc_run_count stuck at 15 after 4+ hours). A fixed 10ms
+     * sleep has nothing to measure and feed back into, so it can't do
+     * that. Desktop only - ESP32 is already this slow natively. */
+    usleep(10000);
+#endif
+#ifdef CLAUDE_LOG
+    if (pc_run_diag_log) {
+        diag_t2          = claude_log_now_us();
+        diag_cycles_post = cycles;
+    }
+#endif
     ack_pause();
 #ifdef USE_GDBSTUB /* avoid a KBC FIFO overflow when CPU emulation is stalled */
     if (gdbstub_step == GDBSTUB_EXEC) {
@@ -2012,6 +2154,94 @@ pc_run(void)
 #endif
     joystick_process(0); // Gameport 0
     endblit();
+
+#ifdef CLAUDE_LOG
+    if (pc_run_diag_log) {
+        diag_t3 = claude_log_now_us();
+        pclog("# pc_run #%u timing (us): setup=%llu cpu_exec=%llu rest=%llu total=%llu\n",
+              (unsigned) pc_run_diag_count,
+              (unsigned long long) (diag_t1 - diag_t0),
+              (unsigned long long) (diag_t2 - diag_t1),
+              (unsigned long long) (diag_t3 - diag_t2),
+              (unsigned long long) (diag_t3 - diag_t0));
+
+        /* Everything below is diagnostic printing itself - moved here,
+         * AFTER diag_t3 is captured, so it no longer counts against
+         * "rest" above (it used to sit between diag_t2 and the
+         * ack_pause()/mouse/joystick/endblit block, inflating "rest"
+         * with the cost of these very pclog() calls - printing over a
+         * slow console is often the single most expensive thing in this
+         * whole function, so that self-measurement bias was real, not
+         * negligible). diag_print_us below reports that cost honestly
+         * instead of hiding it inside "rest". */
+        int32_t cyc_requested = (int32_t) cpu_s->rspeed / (force_10ms ? 100 : 1000);
+        int32_t cyc_consumed  = cyc_requested + diag_cycles_pre - diag_cycles_post;
+        /* Is the CPU actually exploring a wider range of code now that
+         * gfxcard is correctly cga (vs. stuck oscillating in the same
+         * narrow ~600-byte ROM-checksum-loop range as before the config
+         * fix)? Real forward progress into video-init code would show a
+         * much wider/changing address range, not the same few bytes.
+         * cycle_consumed wildly larger than cycle_requested would mean
+         * the classic interpreter's own loop is overrunning its budget
+         * (e.g. a LOOP-based construct not yielding cycles back
+         * correctly between iterations), not just "each cycle is slow". */
+        pclog("# pc_run #%u: cpu_state.pc=%08X cs=%04X es=%04X dx=%04X bx=%04X cx=%04X si=%04X abrt=%d "
+              "cycle_requested=%d cycle_consumed=%d mem_resolve_us=%llu mem_resolve_calls=%u "
+              "cga_poll_us=%llu cga_poll_calls=%u blit_wait_us=%llu blit_wait_calls=%u\n",
+              (unsigned) pc_run_diag_count, cpu_state.pc, CS, ES, DX, BX, CX, SI, cpu_state.abrt,
+              cyc_requested, cyc_consumed,
+              (unsigned long long) esp32_mem_resolve_time_us,
+              (unsigned) esp32_mem_resolve_calls,
+              (unsigned long long) esp32_cga_poll_time_us,
+              (unsigned) esp32_cga_poll_calls,
+              (unsigned long long) esp32_blit_wait_time_us,
+              (unsigned) esp32_blit_wait_calls);
+        {
+            /* Dump the actual opcode bytes at CS:IP (real mode: phys = CS*16+IP)
+             * to see what the CPU is really doing while apparently stuck. */
+            uint32_t phys = ((uint32_t) CS << 4) + cpu_state.pc;
+            uint8_t  b[16];
+            for (int bi = 0; bi < 16; bi++)
+                b[bi] = mem_readb_phys(phys + bi);
+            pclog("#   bytes at %04X:%08X (phys=%08X): "
+                  "%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n",
+                  CS, cpu_state.pc, phys,
+                  b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+                  b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]);
+            pclog("#   pic: imr=%02X irr=%02X isr=%02X int_pending=%u lines0=%u ocw2=%02X "
+                  "pic2: imr=%02X irr=%02X isr=%02X int_pending=%u lines0=%u if=%u "
+                  "nmi=%d nmi_enable=%d nmi_mask=%d\n",
+                  pic.imr, pic.irr, pic.isr, pic.int_pending, pic.lines[0], pic.ocw2,
+                  pic2.imr, pic2.irr, pic2.isr, pic2.int_pending, pic2.lines[0],
+                  !!(cpu_state.flags & 0x0200),
+                  nmi, nmi_enable, nmi_mask);
+        }
+        pclog("# pc_run #%u diag_print_us=%llu (this is diagnostic printing overhead, "
+              "NOT part of setup/cpu_exec/rest/total above)\n",
+              (unsigned) pc_run_diag_count,
+              (unsigned long long) (claude_log_now_us() - diag_t3));
+    }
+    if (pc_run_diag_window_end) {
+        /* Cumulative totals across the whole 100-call window just ending -
+         * see the comment on pc_run_diag_window_end above for why this is
+         * needed instead of trusting the single-call snapshot above for
+         * blit_wait specifically. Commented out (2026-07-28) - noisy now
+         * that the blit_wait/cga_poll question it was added for is
+         * answered; re-enable if that data is needed again. */
+        /*
+        pclog("# pc_run window ending #%u: mem_resolve_us=%llu mem_resolve_calls=%u "
+              "cga_poll_us=%llu cga_poll_calls=%u blit_wait_us=%llu blit_wait_calls=%u\n",
+              (unsigned) pc_run_diag_count,
+              (unsigned long long) esp32_mem_resolve_time_us,
+              (unsigned) esp32_mem_resolve_calls,
+              (unsigned long long) esp32_cga_poll_time_us,
+              (unsigned) esp32_cga_poll_calls,
+              (unsigned long long) esp32_blit_wait_time_us,
+              (unsigned) esp32_blit_wait_calls);
+        */
+    }
+    pc_run_diag_count++;
+#endif
 
     /* Done with this frame, update statistics. */
     framecount++;

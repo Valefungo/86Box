@@ -55,8 +55,8 @@ typedef struct io_trap_s {
 } io_trap_t;
 
 uint8_t initialized = 0;
-io_t   *io[NPORTS];
-io_t   *io_last[NPORTS];
+io_t   *ESP32_BIG_BSS_ATTR io[NPORTS];
+io_t   *ESP32_BIG_BSS_ATTR io_last[NPORTS];
 
 #ifdef ENABLE_IO_LOG
 uint8_t io_do_log = ENABLE_IO_LOG;

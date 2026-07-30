@@ -115,7 +115,7 @@ static uint8_t crtcmask[32] = {
 
 static video_timings_t timing_v6355 = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
 
-static uint8_t mdamap[256][2][2];
+static uint8_t ESP32_BIG_BSS_ATTR mdamap[256][2][2];
 
 /* Default values for palette registers */
 static uint8_t defpalette[32] = {

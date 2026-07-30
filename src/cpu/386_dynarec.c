@@ -142,10 +142,21 @@ fetch_ea_32_long(uint32_t rmdat)
     }
     if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
-        if (readlookup2[addr >> 12] != (uintptr_t) -1)
-            eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
-        if (writelookup2[addr >> 12] != (uintptr_t) -1)
-            eal_w = (uint32_t *) (writelookup2[addr >> 12] + addr);
+        /* READLOOKUP2_GET/WRITELOOKUP2_GET return &ram[phys - virt]
+         * (deliberately out-of-bounds pointer arithmetic whenever phys <
+         * virt) - every other site that reconstitutes this into a real
+         * pointer by adding the linear address back routes it through
+         * MEM_PTR_FIXUP/PTR_RECOMBINE first (see the UB comment on
+         * PTR_RECOMBINE in mem.h). This was the one remaining raw,
+         * un-recombined use of that pattern - eal_r/eal_w feed
+         * geteab/w/l and seteab/w/l, which indirect CALL/JMP (near and
+         * far) use to fetch their target address, so a miscompile here
+         * can corrupt CS:IP without ever touching a general register -
+         * exactly the observed symptom on real ESP32 hardware. */
+        if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) -1)
+            eal_r = (uint32_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
+        if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) -1)
+            eal_w = (uint32_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr);
     }
 }
 
@@ -178,10 +189,21 @@ fetch_ea_16_long(uint32_t rmdat)
     }
     if (easeg != 0xFFFFFFFF && ((easeg + cpu_state.eaaddr) & 0xFFF) <= 0xFFC) {
         uint32_t addr = easeg + cpu_state.eaaddr;
-        if (readlookup2[addr >> 12] != (uintptr_t) -1)
-            eal_r = (uint32_t *) (readlookup2[addr >> 12] + addr);
-        if (writelookup2[addr >> 12] != (uintptr_t) -1)
-            eal_w = (uint32_t *) (writelookup2[addr >> 12] + addr);
+        /* READLOOKUP2_GET/WRITELOOKUP2_GET return &ram[phys - virt]
+         * (deliberately out-of-bounds pointer arithmetic whenever phys <
+         * virt) - every other site that reconstitutes this into a real
+         * pointer by adding the linear address back routes it through
+         * MEM_PTR_FIXUP/PTR_RECOMBINE first (see the UB comment on
+         * PTR_RECOMBINE in mem.h). This was the one remaining raw,
+         * un-recombined use of that pattern - eal_r/eal_w feed
+         * geteab/w/l and seteab/w/l, which indirect CALL/JMP (near and
+         * far) use to fetch their target address, so a miscompile here
+         * can corrupt CS:IP without ever touching a general register -
+         * exactly the observed symptom on real ESP32 hardware. */
+        if (READLOOKUP2_GET(addr >> 12) != (uintptr_t) -1)
+            eal_r = (uint32_t *) MEM_PTR_FIXUP(READLOOKUP2_GET(addr >> 12) + addr);
+        if (WRITELOOKUP2_GET(addr >> 12) != (uintptr_t) -1)
+            eal_w = (uint32_t *) MEM_PTR_FIXUP(WRITELOOKUP2_GET(addr >> 12) + addr);
     }
 }
 
@@ -972,6 +994,15 @@ exec386(int32_t cycs)
     int32_t  ins_cycles;
     uint32_t addr;
 
+#ifdef CLAUDE_LOG
+    {
+        static int done = 0;
+        if (!done) {
+            done = 1;
+            pclog("# exec386() FIRST CALL CONFIRMED - this interpreter is active\n");
+        }
+    }
+#endif
     cycles += cycs;
 
     while (cycles > 0) {
@@ -1014,6 +1045,27 @@ exec386(int32_t cycs)
 #endif
 
             fetchdat = fastreadl_fetch(cs + cpu_state.pc);
+#ifdef CLAUDE_LOG
+            {
+                static int done = 0;
+                if (!done) {
+                    done = 1;
+                    uint32_t fa = cs + cpu_state.pc;
+                    uint8_t  d0 = mem_readb_phys(fa);
+                    uint8_t  d1 = mem_readb_phys(fa + 1);
+                    uint8_t  d2 = mem_readb_phys(fa + 2);
+                    uint8_t  d3 = mem_readb_phys(fa + 3);
+                    pclog("# FIRST fastreadl_fetch: CS=%04X pc=%08X addr=%08X abrt=%d "
+                          "fetchdat=%08X (bytes %02X %02X %02X %02X) direct_mem_readb_phys=%02X %02X %02X %02X "
+                          "pccache=%08X pccache2=%p\n",
+                          CS, cpu_state.pc, fa, cpu_state.abrt, fetchdat,
+                          (unsigned) (fetchdat & 0xFF), (unsigned) ((fetchdat >> 8) & 0xFF),
+                          (unsigned) ((fetchdat >> 16) & 0xFF), (unsigned) ((fetchdat >> 24) & 0xFF),
+                          d0, d1, d2, d3,
+                          (unsigned) pccache, (void *) pccache2);
+                }
+            }
+#endif
 
             if (!cpu_state.abrt) {
 #ifdef ENABLE_386_LOG

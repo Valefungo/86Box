@@ -229,13 +229,13 @@ typedef struct esp_t {
     nmc93cxx_eeprom_t *eeprom;
 } esp_t;
 
-static esp_t *reset_state = NULL;
+static esp_t *ESP32_BIG_BSS_ATTR reset_state = NULL;
 
 #define READ_FROM_DEVICE 1
 #define WRITE_TO_DEVICE  0
 
-uint8_t esp_pci_regs[256];
-bar_t   esp_pci_bar[2];
+uint8_t ESP32_BIG_BSS_ATTR esp_pci_regs[256];
+bar_t   ESP32_BIG_BSS_ATTR esp_pci_bar[2];
 
 #ifdef ENABLE_ESP_LOG
 int esp_do_log = ENABLE_ESP_LOG;

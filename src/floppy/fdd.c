@@ -79,7 +79,7 @@ typedef struct fdd_t {
     int check_bpb;
 } fdd_t;
 
-fdd_t fdd[FDD_NUM];
+fdd_t ESP32_BIG_BSS_ATTR fdd[FDD_NUM];
 
 enum {
     FDD_OP_NONE = 0,
@@ -101,35 +101,35 @@ typedef struct fdd_pending_op_t {
     uint8_t fill;
 } fdd_pending_op_t;
 
-static fdd_pending_op_t fdd_pending[FDD_NUM];
+static fdd_pending_op_t ESP32_BIG_BSS_ATTR fdd_pending[FDD_NUM];
 
 /* BIOS boot status tracking */
-static bios_boot_status_t bios_boot_status = BIOS_BOOT_POST;
+static ESP32_BIG_BSS_ATTR bios_boot_status_t bios_boot_status = BIOS_BOOT_POST;
 
-char  floppyfns[FDD_NUM][MAX_IMAGE_PATH_LEN];
-char *fdd_image_history[FDD_NUM][FLOPPY_IMAGE_HISTORY];
+char  ESP32_BIG_BSS_ATTR floppyfns[FDD_NUM][MAX_IMAGE_PATH_LEN];
+char *ESP32_BIG_BSS_ATTR fdd_image_history[FDD_NUM][FLOPPY_IMAGE_HISTORY];
 
-pc_timer_t fdd_poll_time[FDD_NUM];
-pc_timer_t fdd_seek_timer[FDD_NUM];
-int        fdd_seek_in_progress[FDD_NUM] = { 0, 0, 0, 0 };
+pc_timer_t ESP32_BIG_BSS_ATTR fdd_poll_time[FDD_NUM];
+pc_timer_t ESP32_BIG_BSS_ATTR fdd_seek_timer[FDD_NUM];
+int        ESP32_BIG_BSS_ATTR fdd_seek_in_progress[FDD_NUM] = { 0, 0, 0, 0 };
 
-static int fdd_notfound = 0;
-static int driveloaders[FDD_NUM];
-static int fdd_audio_profile[FDD_NUM] = { 0 };
+static int ESP32_BIG_BSS_ATTR fdd_notfound = 0;
+static int ESP32_BIG_BSS_ATTR driveloaders[FDD_NUM];
+static int ESP32_BIG_BSS_ATTR fdd_audio_profile[FDD_NUM] = { 0 };
 
-int writeprot[FDD_NUM];
-int fwriteprot[FDD_NUM];
-int fdd_changed[FDD_NUM];
-int ui_writeprot[FDD_NUM] = { 0, 0, 0, 0 };
+int ESP32_BIG_BSS_ATTR writeprot[FDD_NUM];
+int ESP32_BIG_BSS_ATTR fwriteprot[FDD_NUM];
+int ESP32_BIG_BSS_ATTR fdd_changed[FDD_NUM];
+int ESP32_BIG_BSS_ATTR ui_writeprot[FDD_NUM] = { 0, 0, 0, 0 };
 int drive_empty[FDD_NUM]  = { 1, 1, 1, 1 };
 
-DRIVE drives[FDD_NUM];
+DRIVE ESP32_BIG_BSS_ATTR drives[FDD_NUM];
 
-uint64_t motoron[FDD_NUM];
+uint64_t ESP32_BIG_BSS_ATTR motoron[FDD_NUM];
 
-fdc_t *fdd_fdc;
+fdc_t *ESP32_BIG_BSS_ATTR fdd_fdc;
 
-d86f_handler_t d86f_handler[FDD_NUM];
+d86f_handler_t ESP32_BIG_BSS_ATTR d86f_handler[FDD_NUM];
 
 static const struct
 {

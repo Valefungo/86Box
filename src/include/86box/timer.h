@@ -1,12 +1,21 @@
 #ifndef _TIMER_H_
 #define _TIMER_H_
 
+/* __int128 needs native TImode support, which only exists on 64-bit GCC
+ * targets - it's a hard compile error on 32-bit RISC-V (ESP32-P4) and
+ * other 32-bit targets, not just an unsupported-but-tolerated extension.
+ * Detect it via __SIZEOF_INT128__ instead of assuming it's always there. */
+#if defined(__SIZEOF_INT128__)
 #ifndef int128_t
 #define int128_t __int128
 #endif
 
 #ifndef uint128_t
 #define uint128_t unsigned __int128
+#endif
+#define TIMER_HAS_INT128 1
+#else
+#define TIMER_HAS_INT128 0
 #endif
 
 extern uint64_t tsc;
@@ -141,13 +150,39 @@ timer_get_ts_int(pc_timer_t *timer)
     return timer->ts_integer;
 }
 
+#if TIMER_HAS_INT128
+static __inline int128_t
+timer_get_remaining_raw(pc_timer_t *timer)
+{
+    return (((uint128_t) timer->ts_integer << 32) | timer->ts_frac) - ((uint128_t) tsc << 32);
+}
+#else
+/* No native 128-bit type on this compiler/target (e.g. 32-bit RISC-V).
+ * Compute the same 96-bit value (ts_integer:ts_frac) - (tsc:0) with plain
+ * 64-bit arithmetic instead: timer periods are capped at ~0x7fffffff CPU
+ * cycles (see timer_advance_u64 above), so ts_integer and tsc never drift
+ * apart by more than ~31 bits - the difference still fits in int64_t even
+ * after multiplying by 2^32, so this is exact, not an approximation. */
+static __inline int64_t
+timer_get_remaining_raw(pc_timer_t *timer)
+{
+    int64_t diff = (int64_t) (timer->ts_integer - tsc);
+
+    return diff * ((int64_t) 1 << 32) + (int64_t) timer->ts_frac;
+}
+#endif
+
 /*Return remaining time before timer expires, in us. If the timer has already
   expired then return 0*/
 static __inline uint64_t
 timer_get_remaining_us(pc_timer_t *timer)
 {
     if (timer->flags & TIMER_ENABLED) {
-        int128_t remaining = (((uint128_t)timer->ts_integer << 32) | timer->ts_frac) - ((uint128_t)tsc << 32);
+#if TIMER_HAS_INT128
+        int128_t remaining = timer_get_remaining_raw(timer);
+#else
+        int64_t  remaining = timer_get_remaining_raw(timer);
+#endif
 
         if (remaining < 0)
             return 0;
@@ -159,11 +194,20 @@ timer_get_remaining_us(pc_timer_t *timer)
 
 /*Return remaining time before timer expires, in 32:32 timestamp format. If the
   timer has already expired then return 0*/
-static __inline uint128_t
-timer_get_remaining_u64(pc_timer_t *timer)
+static __inline
+#if TIMER_HAS_INT128
+    uint128_t
+#else
+    uint64_t
+#endif
+    timer_get_remaining_u64(pc_timer_t *timer)
 {
     if (timer->flags & TIMER_ENABLED) {
-        int128_t remaining = (((uint128_t)timer->ts_integer << 32) | timer->ts_frac) - ((uint128_t)tsc << 32);
+#if TIMER_HAS_INT128
+        int128_t remaining = timer_get_remaining_raw(timer);
+#else
+        int64_t  remaining = timer_get_remaining_raw(timer);
+#endif
 
         if (remaining < 0)
             return 0;

@@ -59,16 +59,16 @@
 #define DEVICE_MAX 512 /* max # of devices */
 
 typedef struct device_state_t {
-    uintptr_t local;
-    int       inst;
+    uint64_t local;
+    int      inst;
 } device_state_t;
 
-static device_t        *devices[DEVICE_MAX];
-static device_state_t   device_state[DEVICE_MAX];
-static void            *device_priv[DEVICE_MAX];
-static device_context_t device_current;
-static device_context_t device_prev;
-static void            *device_common_priv;
+static device_t        *ESP32_BIG_BSS_ATTR devices[DEVICE_MAX];
+static device_state_t   ESP32_BIG_BSS_ATTR device_state[DEVICE_MAX];
+static void            *ESP32_BIG_BSS_ATTR device_priv[DEVICE_MAX];
+static device_context_t ESP32_BIG_BSS_ATTR device_current;
+static device_context_t ESP32_BIG_BSS_ATTR device_prev;
+static void            *ESP32_BIG_BSS_ATTR device_common_priv;
 
 #ifdef ENABLE_DEVICE_LOG
 int device_do_log = ENABLE_DEVICE_LOG;
@@ -310,7 +310,7 @@ device_context_restore(void)
 }
 
 static void *
-device_add_common(const device_t *dev, void *p, void *params, int inst)
+device_add_common_ex(const device_t *dev, void *p, int has_local, uint64_t local_bits, int inst)
 {
     device_t *init_dev = NULL;
     void     *priv     = NULL;
@@ -336,14 +336,14 @@ device_add_common(const device_t *dev, void *p, void *params, int inst)
         return ((void *) dev->name);
     }
 
-    if (params != NULL) {
+    if (has_local) {
         init_dev = calloc(1, sizeof(device_t));
         if (init_dev == NULL) {
             fatal("Unable to allocate memory for device \"%s\", instance %i", dev->name, inst);
             return NULL;
         }
         memcpy(init_dev, dev, sizeof(device_t));
-        init_dev->local |= (uintptr_t) params;
+        init_dev->local |= local_bits;
     } else
         init_dev = (device_t *) dev;
 
@@ -461,6 +461,12 @@ device_get_machine(const device_t *dev)
     return dev->machine;
 }
 
+static void *
+device_add_common(const device_t *dev, void *p, void *params, int inst)
+{
+    return device_add_common_ex(dev, p, params != NULL, (uint64_t) (uintptr_t) params, inst);
+}
+
 void *
 device_add(const device_t *dev)
 {
@@ -482,6 +488,18 @@ void *
 device_add_params(const device_t *dev, void *params)
 {
     return device_add_common(dev, NULL, params, 0);
+}
+
+/*
+ * Like device_add_params(), but takes the local bits directly as a
+ * uint64_t instead of smuggling them through a void * - some local
+ * values (e.g. NVR_IRQ_*) use bits at position 40+, which a plain
+ * void * round-trip would silently truncate on 32-bit hosts.
+ */
+void *
+device_add_params64(const device_t *dev, uint64_t params)
+{
+    return device_add_common_ex(dev, NULL, 1, params, 0);
 }
 
 /* For devices that do not have an init function (internal video etc.) */

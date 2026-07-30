@@ -115,31 +115,31 @@ enum {
     ENV_RAMP_UP   = 8
 };
 
-static int random_helper = 0;
-int        dmareadbit    = 0;
-int        dmawritebit   = 0;
+static int ESP32_BIG_BSS_ATTR random_helper = 0;
+int        ESP32_BIG_BSS_ATTR dmareadbit    = 0;
+int        ESP32_BIG_BSS_ATTR dmawritebit   = 0;
 
 /* cubic and linear tables resolution. Note: higher than 10 does not improve the result. */
 #define CUBIC_RESOLUTION_LOG 10
 #define CUBIC_RESOLUTION     (1 << CUBIC_RESOLUTION_LOG)
 /* cubic_table coefficients. */
-static float cubic_table[CUBIC_RESOLUTION * 4];
+static float ESP32_BIG_BSS_ATTR cubic_table[CUBIC_RESOLUTION * 4];
 
 /* conversion from current pitch to linear frequency change (in 32.32 fixed point). */
-static int64_t freqtable[65536];
+static int64_t ESP32_BIG_BSS_ATTR freqtable[65536];
 /* Conversion from initial attenuation to 16 bit unsigned lineal amplitude (currently only a way to update volume target register) */
-static int32_t attentable[256];
+static int32_t ESP32_BIG_BSS_ATTR attentable[256];
 /* Conversion from envelope dbs (once rigth shifted) (0 = 0dBFS, 65535 = -96dbFS and silence ) to 16 bit unsigned lineal amplitude,
  * to convert to current volume. (0 to 65536) */
-static int32_t env_vol_db_to_vol_target[65537];
+static int32_t ESP32_BIG_BSS_ATTR env_vol_db_to_vol_target[65537];
 /* Same as above, but to convert amplitude (once rigth shifted) (0 to 65536) to db (0 = 0dBFS, 65535 = -96dbFS and silence ).
  * it is needed so that the delay, attack and hold phase can be added to initial attenuation and tremolo */
-static int32_t env_vol_amplitude_to_db[65537];
+static int32_t ESP32_BIG_BSS_ATTR env_vol_amplitude_to_db[65537];
 /* Conversion from envelope herts (once right shifted) to octave . it is needed so that the delay, attack and hold phase can be
  * added to initial pitch ,lfos pitch , initial filter and lfo filter */
-static int32_t env_mod_hertz_to_octave[65537];
+static int32_t ESP32_BIG_BSS_ATTR env_mod_hertz_to_octave[65537];
 /* Conversion from envelope amount to time in samples. */
-static int32_t env_attack_to_samples[128];
+static int32_t ESP32_BIG_BSS_ATTR env_attack_to_samples[128];
 
 /* This table has been generated using the following formula:
  * Get the amount of dBs that have to be added each sample to reach 96dBs in the amount
@@ -182,12 +182,12 @@ static int32_t env_decay_to_millis[128] = {
 #endif
 
 /* Table represeting the LFO waveform (signed 16bits with 32768 max int. >> 15 to move back to +/-1 range). */
-static int32_t lfotable[65536];
+static int32_t ESP32_BIG_BSS_ATTR lfotable[65536];
 /* Table to transform the speed parameter to emu8k_mem_internal_t range. */
-static int64_t lfofreqtospeed[256];
+static int64_t ESP32_BIG_BSS_ATTR lfofreqtospeed[256];
 
 /* LFO used for the chorus. a sine wave.(signed 16bits with 32768 max int. >> 15 to move back to +/-1 range). */
-static double chortable[65536];
+static double ESP32_BIG_BSS_ATTR chortable[65536];
 
 static const int REV_BUFSIZE_STEP = 242;
 
@@ -228,7 +228,7 @@ static int32_t filter_atten[16] = {
 };
 
 /*Coefficients for the filters for a defined Q and cutoff.*/
-static int32_t filt_coeffs[16][256][3];
+static int32_t ESP32_BIG_BSS_ATTR filt_coeffs[16][256][3];
 
 #define READ16_SWITCH(addr, var)          \
     switch ((addr) &2) {                  \

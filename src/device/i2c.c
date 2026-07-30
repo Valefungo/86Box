@@ -42,7 +42,7 @@ typedef struct i2c_bus_t {
     i2c_t *last[NADDRS];
 } i2c_bus_t;
 
-void *i2c_smbus;
+void *ESP32_BIG_BSS_ATTR i2c_smbus;
 
 #ifdef ENABLE_I2C_LOG
 int i2c_do_log = ENABLE_I2C_LOG;

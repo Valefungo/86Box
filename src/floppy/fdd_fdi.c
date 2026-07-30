@@ -48,8 +48,8 @@ typedef struct fdi_t {
     uint8_t track_timing[2][4][256 * 1024];
 } fdi_t;
 
-static fdi_t *fdi[FDD_NUM];
-static fdc_t *fdi_fdc;
+static fdi_t *ESP32_BIG_BSS_ATTR fdi[FDD_NUM];
+static fdc_t *ESP32_BIG_BSS_ATTR fdi_fdc;
 
 #ifdef ENABLE_FDI_LOG
 int fdi_do_log = ENABLE_FDI_LOG;

@@ -589,7 +589,7 @@ wd76c10_recalc_exec(wd76c10_t *dev, uint32_t base, uint32_t size)
 
     for (uint32_t i = base; i < (base + size); i += 4096)
         if (dev->ram_state[i >> 12])
-            _mem_exec[i >> 12] = exec;
+            MEM_EXEC_SET(i >> 12, exec);
 
     if (cpu_use_exec)
         flushmmucache_nopc();
@@ -1405,7 +1405,7 @@ wd76c10_init(UNUSED(const device_t *info))
         dev->mem_pages[i] = i - 0x20;
 
     device_add(&port_92_inv_device);
-    dev->nvr = device_add_params(&nvr_at_device, (void *) (uintptr_t) NVR_AT_ZERO_DEFAULT);
+    dev->nvr = device_add_params64(&nvr_at_device, NVR_AT_ZERO_DEFAULT);
     dev->uart[0] = device_add_inst(&ns16450_device, 1);
     dev->uart[1] = device_add_inst(&ns16450_device, 2);
     dev->lpt = device_add_inst(&lpt_port_device, 1);

@@ -65,7 +65,7 @@ static uint8_t crtcmask[32] = {
     0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static uint8_t interp_lut[2][256][256];
+static uint8_t ESP32_BIG_BSS_ATTR interp_lut[2][256][256];
 
 static video_timings_t timing_cga = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
 
@@ -571,7 +571,7 @@ typedef struct cga_present_geometry_latch_t {
 } cga_present_geometry_latch_t;
 
 static cga_present_geometry_latch_t
-    cga_present_geometry_latches[CGA_PRESENT_GEOMETRY_SLOTS];
+    ESP32_BIG_BSS_ATTR cga_present_geometry_latches[CGA_PRESENT_GEOMETRY_SLOTS];
 
 static cga_present_geometry_latch_t *
 cga_present_geometry_latch(cga_t *cga)
@@ -672,9 +672,28 @@ cga_do_blit(int vid_xsize, int firstline, int lastline, int double_type)
     }
 }
 
+#ifdef CLAUDE_LOG
+/* Diagnostic (2026-07-27): is the CGA timer callback itself - called from
+ * inside timer_process(), which runs inline in the CPU interpreter's main
+ * loop - the source of the ~87-89ms/call cpu_exec() cost seen after the
+ * gfxcard config fix landed (vs. ~10-11ms/call before it, when gfxcard was
+ * still stuck at "none" and this callback was never registered/fired)?
+ * Cumulative time spent in cga_poll(), reset and reported once per second
+ * from pc_run()'s own diagnostic block in 86box.c. Was ESP_PLATFORM-only
+ * (2026-07-27); widened to CLAUDE_LOG (2026-07-30) for cross-platform
+ * comparison, using claude_log_now_us() instead of plat_timer_read()
+ * directly - see the unit-mismatch comment on claude_log_now_us() in
+ * 86box.h (plat_timer_read() is NOT microseconds on desktop/SDL). */
+uint64_t esp32_cga_poll_time_us = 0;
+uint32_t esp32_cga_poll_calls   = 0;
+#endif
+
 void
 cga_poll(void *priv)
 {
+#ifdef CLAUDE_LOG
+    uint64_t esp32_cga_t0 = claude_log_now_us();
+#endif
     cga_t   *cga = (cga_t *) priv;
     int      x;
     int      scanline_old;
@@ -879,6 +898,10 @@ cga_poll(void *priv)
                 cga->charbuffer[x] = cga->vram[((cga->memaddr << 1) + x) & DEVICE_VRAM_MASK];
         }
     }
+#ifdef CLAUDE_LOG
+    esp32_cga_poll_time_us += (claude_log_now_us() - esp32_cga_t0);
+    esp32_cga_poll_calls++;
+#endif
 }
 
 void

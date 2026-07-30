@@ -576,7 +576,7 @@ static const scancode scancode_tandy[512] = {
     // clang-format on
 };
 
-static int eep_data_out;
+static int ESP32_BIG_BSS_ATTR eep_data_out;
 
 #ifdef ENABLE_TANDY_LOG
 int tandy_do_log = ENABLE_TANDY_LOG;

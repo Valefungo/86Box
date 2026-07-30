@@ -85,7 +85,7 @@ typedef struct mouse_microtouch_t {
     pc_timer_t   reset_timer;
 } mouse_microtouch_t;
 
-static mouse_microtouch_t *mtouch_inst = NULL;
+static mouse_microtouch_t *ESP32_BIG_BSS_ATTR mtouch_inst = NULL;
 
 static void
 mtouch_savenvr(void *priv)

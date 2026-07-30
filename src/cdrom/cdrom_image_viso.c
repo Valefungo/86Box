@@ -132,7 +132,7 @@ typedef struct {
 
 static const char rr_eid[]   = "RRIP_1991A"; /* identifiers used in ER field for Rock Ridge */
 static const char rr_edesc[] = "THE ROCK RIDGE INTERCHANGE PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM SEMANTICS.";
-static int        tz_offset_sec = 0;
+static int        ESP32_BIG_BSS_ATTR tz_offset_sec = 0;
 static int8_t     tz_offset_iso = 0;
 
 #ifdef IMAGE_VISO_LOG

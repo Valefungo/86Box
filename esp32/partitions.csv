@@ -1,0 +1,11 @@
+# ESP-IDF Partition Table for 86Box-minimal on ESP32-P4 (16MB flash)
+# ROM images and disk images live on the SD card, not in flash - no
+# dedicated data partitions needed for those.
+# Name, Type, SubType, Offset, Size, Flags
+# nvs/phy_init offsets pushed out from their original 0x9000/0xf000 to make
+# room for CONFIG_PARTITION_TABLE_OFFSET moving from 0x8000 to 0x10000 -
+# needed once CONFIG_ESP_SYSTEM_USE_FRAME_POINTER=y (real panic backtraces)
+# grew the bootloader past its original tiny 24KB slot.
+nvs,data,nvs,0x11000,24K,
+phy_init,data,phy,0x17000,4K,
+factory,app,factory,0x20000,8M,

@@ -44,7 +44,7 @@
 #include <86box/mo.h>
 #include <86box/plat_unused.h>
 
-static int next_id = 0;
+static int ESP32_BIG_BSS_ATTR next_id = 0;
 
 uint8_t         sff_bus_master_read(uint16_t port, void *priv);
 static uint16_t sff_bus_master_readw(uint16_t port, void *priv);

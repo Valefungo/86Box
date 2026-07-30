@@ -530,9 +530,6 @@ extern const device_t ati28800_wonderxl24_device;
 /* vid_cga_olivetti.c */
 extern const device_t ogc_m24_device;
 extern const device_t ogc_device;
-/* vid_chips_69000.c */
-extern const device_t chips_69000_device;
-extern const device_t chips_69000_onboard_device;
 /* vid_ht216.c */
 extern const device_t g2_gc205_device;
 extern const device_t v7_vga_1024i_device;
@@ -552,46 +549,6 @@ extern const device_t paradise_pvga1a_device;
 extern const device_t paradise_wd90c11_megapc_device;
 extern const device_t paradise_wd90c11_device;
 extern const device_t paradise_wd90c30_device;
-/* vid_s3.c */
-extern const device_t s3_86c805_onboard_vlb_device;
-extern const device_t s3_trio32_onboard_vlb_device;
-extern const device_t s3_trio32_onboard_pci_device;
-extern const device_t s3_trio64_onboard_pci_device;
-extern const device_t s3_trio64vplus_onboard_pci_device;
-extern const device_t s3_trio64v2dx_onboard_pci_device;
-extern const device_t s3_86c911_isa_device;
-extern const device_t s3_86c924_isa_device;
-extern const device_t s3_86c928_isa_device;
-extern const device_t s3_86c928_vlb_device;
-extern const device_t s3_86c928_pci_device;
-extern const device_t s3_86c801_isa_device;
-extern const device_t s3_86c805_isa_device;
-extern const device_t s3_86c805_vlb_device;
-extern const device_t s3_vision864_vlb_device;
-extern const device_t s3_vision864_pci_device;
-extern const device_t s3_trio32_vlb_device;
-extern const device_t s3_trio32_pci_device;
-extern const device_t s3_vision964_vlb_device;
-extern const device_t s3_vision964_pci_device;
-extern const device_t s3_trio64_vlb_device;
-extern const device_t s3_trio64_pci_device;
-extern const device_t s3_vision868_pci_device;
-extern const device_t s3_vision968_vlb_device;
-extern const device_t s3_vision968_pci_device;
-extern const device_t s3_trio64vplus_vlb_device;
-extern const device_t s3_trio64vplus_pci_device;
-extern const device_t s3_trio64v2dx_pci_device;
-/* vid_s3_virge.c */
-extern const device_t s3_virge_pci_device;
-extern const device_t s3_virge_325_onboard_pci_device;
-extern const device_t s3_virge_vx_pci_device;
-extern const device_t s3_virge_dx_pci_device;
-extern const device_t s3_virge_375_onboard_pci_device;
-extern const device_t s3_virge_gx_pci_device;
-extern const device_t s3_virge_gx2_pci_device;
-extern const device_t s3_virge_gx2_agp_device;
-extern const device_t s3_trio3d2x_pci_device;
-extern const device_t s3_trio3d2x_agp_device;
 /* vid_tgui9440.c */
 extern const device_t tgui9400cxi_device;
 extern const device_t tgui9440_vlb_device;

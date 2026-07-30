@@ -30,7 +30,7 @@
 #define SPD_ROLLUP(x) ((x) >= 16 ? ((x) -15) : (x))
 
 uint8_t spd_present = 0;
-spd_t  *spd_modules[SPD_MAX_SLOTS];
+spd_t  *ESP32_BIG_BSS_ATTR spd_modules[SPD_MAX_SLOTS];
 
 static const device_t spd_device;
 

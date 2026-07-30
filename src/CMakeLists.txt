@@ -76,6 +76,10 @@ if(DYNAREC)
     add_compile_definitions(USE_DYNAREC)
 endif()
 
+if(MEM_COMPACT_TABLES)
+    add_compile_definitions(MEM_COMPACT_TABLES)
+endif()
+
 if(DEBUGREGS486)
     add_compile_definitions(USE_DEBUG_REGS_486)
 endif()

@@ -144,7 +144,7 @@ typedef struct mcide_t {
     rom_t bios_rom;
 } mcide_t;
 
-ide_board_t *ide_boards[IDE_BUS_MAX] = { 0 };
+ide_board_t *ESP32_BIG_BSS_ATTR ide_boards[IDE_BUS_MAX] = { 0 };
 
 static uint8_t ide_ter_pnp_rom[] = {
     /* BOX0001, serial 0, dummy checksum (filled in by isapnp_add_card) */
@@ -233,7 +233,7 @@ static uint8_t ide_qua_pnp_rom[] = {
     0x79, 0x00
 };
 
-ide_t *ide_drives[IDE_NUM] = { 0 };
+ide_t *ESP32_BIG_BSS_ATTR ide_drives[IDE_NUM] = { 0 };
 
 static void ide_atapi_callback(ide_t *ide);
 static void ide_callback(void *priv);

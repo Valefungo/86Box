@@ -36,7 +36,7 @@
 #include <86box/serial.h>
 #include <86box/mouse.h>
 
-serial_port_t com_ports[SERIAL_MAX] = { 0 };
+serial_port_t ESP32_BIG_BSS_ATTR com_ports[SERIAL_MAX] = { 0 };
 
 enum {
     SERIAL_INT_LSR       = 1,
@@ -50,8 +50,8 @@ enum {
 
 void    serial_update_ints(serial_t *dev);
 
-static int             next_inst = 0;
-static serial_device_t serial_devices[SERIAL_MAX];
+static int             ESP32_BIG_BSS_ATTR next_inst = 0;
+static serial_device_t ESP32_BIG_BSS_ATTR serial_devices[SERIAL_MAX];
 
 static void            serial_xmit_d_empty_evt(void *priv);
 

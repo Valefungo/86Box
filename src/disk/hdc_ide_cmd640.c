@@ -54,7 +54,7 @@ typedef struct cmd640_t {
     int      irq_line;
 } cmd640_t;
 
-static int next_id = 0;
+static int ESP32_BIG_BSS_ATTR next_id = 0;
 
 #ifdef ENABLE_CMD640_LOG
 int cmd640_do_log = ENABLE_CMD640_LOG;

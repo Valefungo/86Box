@@ -60,9 +60,9 @@
 #define STAT_IFULL    0x02
 #define STAT_OFULL    0x01
 
-static uint8_t key_queue[16];
-static int     key_queue_start = 0;
-static int     key_queue_end   = 0;
+static uint8_t ESP32_BIG_BSS_ATTR key_queue[16];
+static int     ESP32_BIG_BSS_ATTR key_queue_start = 0;
+static int     ESP32_BIG_BSS_ATTR key_queue_end   = 0;
 
 /*PCjr keyboard has no escape scancodes, and no scancodes beyond 54
   Map right alt to 54h (FN) */

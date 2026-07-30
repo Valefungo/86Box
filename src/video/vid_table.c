@@ -49,7 +49,7 @@ typedef struct video_card_migrate_t {
 
 static video_timings_t timing_default = { .type = VIDEO_ISA, .write_b = 8, .write_w = 16, .write_l = 32, .read_b = 8, .read_w = 16, .read_l = 32 };
 
-static int was_reset = 0;
+static ESP32_BIG_BSS_ATTR int was_reset = 0;
 
 static const VIDEO_CARD
 video_cards[] = {
@@ -164,7 +164,7 @@ vid_table_log(const char *fmt, ...)
 #    define vid_table_log(fmt, ...)
 #endif
 
-static pc_timer_t framerate_timer;
+static pc_timer_t ESP32_BIG_BSS_ATTR framerate_timer;
 
 void
 video_update_framerates(void* priv)

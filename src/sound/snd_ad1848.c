@@ -53,8 +53,8 @@ ad1848_log(const char *fmt, ...)
 #    define ad1848_log(fmt, ...)
 #endif
 
-static int    ad1848_vols_7bits[128];
-static double ad1848_vols_5bits_aux_gain[32];
+static int    ESP32_BIG_BSS_ATTR ad1848_vols_7bits[128];
+static double ESP32_BIG_BSS_ATTR ad1848_vols_5bits_aux_gain[32];
 
 /* Borrowed from ffmpeg. */
 static const int8_t adpcm_index_table[16] = {

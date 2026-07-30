@@ -46,7 +46,7 @@ x86seg tr;
 uint32_t cr2;
 uint32_t cr3;
 uint32_t cr4;
-uint32_t dr[8];
+uint32_t ESP32_BIG_BSS_ATTR dr[8];
 
 uint32_t use32;
 int      stack32;
@@ -103,7 +103,7 @@ uint32_t olddslimitw;
 uint32_t oldsslimitw;
 uint32_t oxpc;
 uint32_t rmdat32;
-uint32_t backupregs[16];
+uint32_t ESP32_BIG_BSS_ATTR backupregs[16];
 
 x86seg _oldds;
 

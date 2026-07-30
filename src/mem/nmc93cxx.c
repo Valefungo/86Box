@@ -195,7 +195,7 @@ nmc93cxx_eeprom_start_cmd_timer(nmc93cxx_eeprom_t *dev, double period)
 static void *
 nmc93cxx_eeprom_init(const device_t *info)
 {
-    nmc93cxx_eeprom_params_t *params_details = (nmc93cxx_eeprom_params_t *) info->local;
+    nmc93cxx_eeprom_params_t *params_details = (nmc93cxx_eeprom_params_t *) (uintptr_t) info->local;
     nmc93cxx_eeprom_t *dev;
     bool fill_default = true;
     uint16_t cells, nwords, data_bits;

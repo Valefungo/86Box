@@ -345,7 +345,7 @@ typedef struct _machine_ {
     uint32_t             (*gpio_acpi_handler)(uint8_t write, uint32_t val);
     const machine_cpu_t    cpu;
     uintptr_t              bus_flags;
-    uintptr_t              flags;
+    uint64_t               flags;
     const machine_memory_t ram;
     int                    ram_granularity;
     int                    nvrmask;
@@ -362,7 +362,7 @@ typedef struct _machine_ {
 #else
     void                  *nvr_device;
 #endif /* EMU_DEVICE_H */
-    uintptr_t              nvr_params;
+    uint64_t               nvr_params;
 #ifdef EMU_DEVICE_H
     const device_t        *sio_device;
 #else
@@ -420,10 +420,10 @@ extern const device_t *machine_get_net_device(int m);
 extern const char *    machine_get_internal_name_ex(int m);
 extern const char *    machine_get_nvr_name_ex(int m);
 extern int             machine_get_nvrmask(int m);
-extern int             machine_has_flags(int m, uintptr_t flags);
+extern uint64_t        machine_has_flags(int m, uint64_t flags);
 extern void            machine_set_ps2(void);
 extern void            machine_force_ps2(int is_ps2);
-extern int             machine_has_flags_ex(uintptr_t flags);
+extern uint64_t        machine_has_flags_ex(uint64_t flags);
 extern int             machine_has_bus(int m, uintptr_t bus_flags);
 extern int             machine_has_cartridge(int m);
 extern int             machine_has_jumpered_ecp_dma(int m, int dma);

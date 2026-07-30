@@ -12809,10 +12809,10 @@ machine_get_nvrmask(int m)
     return (machines[m].nvrmask);
 }
 
-int
-machine_has_flags(int m, uintptr_t flags)
+uint64_t
+machine_has_flags(int m, uint64_t flags)
 {
-    int ret = machines[m].flags & flags;
+    uint64_t ret = machines[m].flags & flags;
 
     /* Can't have PS/2 ports with an AT KBC. */
     if ((flags & MACHINE_PS2_KBC) &&
@@ -12837,10 +12837,10 @@ machine_force_ps2(int is_ps2)
     machine_is_ps2 = is_ps2;
 }
 
-int
-machine_has_flags_ex(uintptr_t flags)
+uint64_t
+machine_has_flags_ex(uint64_t flags)
 {
-    int ret = machine_has_flags(machine, flags);
+    uint64_t ret = machine_has_flags(machine, flags);
 
     if (flags & MACHINE_PS2_KBC) {
         if (machine_is_ps2 && (machines[machine].init != machine_at_pc5286_init))

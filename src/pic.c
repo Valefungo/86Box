@@ -252,7 +252,7 @@ void
 pic_reset(void)
 {
     int is_at     = IS_AT(machine);
-    int is_zenith = machine_has_flags(machine, MACHINE_ZENITH);
+    int is_zenith = machine_has_flags(machine, MACHINE_ZENITH) != 0;
     is_at         = is_at || (machines[machine].init == machine_xt_xi8088_init);
 
     memset(&pic, 0, sizeof(pic_t));

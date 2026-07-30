@@ -123,7 +123,7 @@ machine_init_ex(int m)
         pci_flags = 0x00000000;
 
         if (machines[m].nvr_device)
-            device_add_params(machines[m].nvr_device, (void *) (uintptr_t) machines[m].nvr_params);
+            device_add_params64(machines[m].nvr_device, machines[m].nvr_params);
     }
 
     /* All good, boot the machine! */

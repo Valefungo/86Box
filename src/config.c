@@ -541,7 +541,6 @@ load_machine(void)
     cpu_override_interpreter = ini_section_get_int(cat, "cpu_override_interpreter", 0);
     cpu_f                    = NULL;
     p                        = ini_section_get_string(cat, "cpu_family", NULL);
-    cpu_override_interpreter = 1;
     if (p) {
         /* Migrate CPU family changes. */
         if (machines[machine].init == machine_at_deskpro386_init)
@@ -607,7 +606,6 @@ load_machine(void)
     fpu_type = fpu_get_type(cpu_f, cpu, p);
 
     mem_size = ini_section_get_int(cat, "mem_size", 64);
-    mem_size = 2048;
     
     if (mem_size > machine_get_max_ram(machine))
         mem_size = machine_get_max_ram(machine);
